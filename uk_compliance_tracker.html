@@ -7,6 +7,17 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
+  --bg:#f8f8fc;--surface:#ffffff;--surface2:#f0f0f7;--surface3:#e8e8f2;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);
+  --text:#1a1a2e;--text2:#6060a0;--text3:#a0a0c0;
+  --accent:#6c63ff;--accent2:#5549e0;
+  --green:#16a34a;--green-bg:rgba(22,163,74,0.08);--green-border:rgba(22,163,74,0.2);
+  --amber:#b45309;--amber-bg:rgba(180,83,9,0.08);--amber-border:rgba(180,83,9,0.2);
+  --red:#dc2626;--red-bg:rgba(220,38,38,0.08);--red-border:rgba(220,38,38,0.2);
+  --radius:12px;--radius-lg:16px;--radius-xl:20px;
+  --shadow:0 2px 12px rgba(0,0,0,0.08);
+}
+[data-theme="dark"]{
   --bg:#0f0f13;--surface:#18181f;--surface2:#22222c;--surface3:#2a2a36;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
   --text:#f0f0f5;--text2:#9898b0;--text3:#5a5a72;
@@ -14,7 +25,19 @@
   --green:#22c55e;--green-bg:rgba(34,197,94,0.1);--green-border:rgba(34,197,94,0.25);
   --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.1);--amber-border:rgba(245,158,11,0.25);
   --red:#ef4444;--red-bg:rgba(239,68,68,0.1);--red-border:rgba(239,68,68,0.25);
-  --radius:12px;--radius-lg:16px;--radius-xl:20px;
+  --shadow:0 2px 12px rgba(0,0,0,0.3);
+}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f0f13;--surface:#18181f;--surface2:#22222c;--surface3:#2a2a36;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --text:#f0f0f5;--text2:#9898b0;--text3:#5a5a72;
+    --accent:#6c63ff;--accent2:#8b85ff;
+    --green:#22c55e;--green-bg:rgba(34,197,94,0.1);--green-border:rgba(34,197,94,0.25);
+    --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.1);--amber-border:rgba(245,158,11,0.25);
+    --red:#ef4444;--red-bg:rgba(239,68,68,0.1);--red-border:rgba(239,68,68,0.25);
+    --shadow:0 2px 12px rgba(0,0,0,0.3);
+  }
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 
@@ -212,6 +235,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     <div class="nav-stat"><div class="stat-dot" style="background:var(--amber)"></div><span id="statAmber">0</span> yaklaşıyor</div>
     <div class="nav-stat"><div class="stat-dot" style="background:var(--green)"></div><span id="statGreen">0</span> tamam</div>
   </div>
+  <button onclick="toggleTheme()" id="themeBtn" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="Tema değiştir">🌙</button>
 </nav>
 
 <!-- CLIENTS VIEW -->
@@ -781,8 +805,29 @@ function migrateOldData(){
   if(migrated){persist();console.log('Migrated',migrated,'companies');}
 }
 
+function toggleTheme(){
+  const html=document.documentElement;
+  const cur=html.getAttribute('data-theme');
+  const isDark=cur==='dark'||(cur===null&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+  const next=isDark?'light':'dark';
+  html.setAttribute('data-theme',next);
+  localStorage.setItem('theme',next);
+  document.getElementById('themeBtn').textContent=next==='dark'?'☀️':'🌙';
+}
+function initTheme(){
+  const saved=localStorage.getItem('theme');
+  if(saved){
+    document.documentElement.setAttribute('data-theme',saved);
+    document.getElementById('themeBtn').textContent=saved==='dark'?'☀️':'🌙';
+  } else {
+    const prefersDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+    document.getElementById('themeBtn').textContent=prefersDark?'☀️':'🌙';
+  }
+}
+
 renderApiStatus();
 migrateOldData();
+initTheme();
 renderClients();
 updateStats();
 </script>
