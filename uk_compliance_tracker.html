@@ -3,591 +3,788 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UK Compliance Tracker</title>
+<title>Client Hub</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#fff;--bg2:#f5f5f4;--bg3:#fafaf9;--text:#1c1917;--text2:#78716c;--text3:#a8a29e;
-  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);--radius:10px;--radius-lg:14px;
-  --green:#16a34a;--green-bg:#dcfce7;--green-light:#f0fdf4;
-  --amber:#b45309;--amber-bg:#fef3c7;--amber-light:#fffbeb;
-  --red:#dc2626;--red-bg:#fee2e2;--red-light:#fff5f5;
-  --blue:#2563eb;--blue-bg:#eff6ff;
+  --bg:#0f0f13;--surface:#18181f;--surface2:#22222c;--surface3:#2a2a36;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0f0f5;--text2:#9898b0;--text3:#5a5a72;
+  --accent:#6c63ff;--accent2:#8b85ff;
+  --green:#22c55e;--green-bg:rgba(34,197,94,0.1);--green-border:rgba(34,197,94,0.25);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.1);--amber-border:rgba(245,158,11,0.25);
+  --red:#ef4444;--red-bg:rgba(239,68,68,0.1);--red-border:rgba(239,68,68,0.25);
+  --radius:12px;--radius-lg:16px;--radius-xl:20px;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
-/* LAYOUT */
-.app{display:grid;grid-template-columns:1fr 320px;grid-template-rows:auto 1fr;min-height:100vh;gap:0}
-.main-col{padding:1.5rem;min-width:0}
-.cal-col{background:var(--bg);border-left:1px solid var(--border);padding:1.25rem;position:sticky;top:0;height:100vh;overflow-y:auto}
-@media(max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:auto auto}.cal-col{border-left:none;border-top:1px solid var(--border);height:auto;position:static}}
-/* HEADER */
-.app-title{font-size:20px;font-weight:700;margin-bottom:2px}
-.app-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
-/* API KEY */
-.setup-box{background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem}
-.setup-box.hidden,.api-ok.hidden{display:none}
-.setup-title{font-size:13px;font-weight:600;color:#1e40af;margin-bottom:6px}
-.setup-steps{font-size:12px;color:#1e40af;line-height:1.7;margin-bottom:10px}
-.setup-row{display:flex;gap:6px}
-.setup-row input{flex:1;padding:0 8px;height:32px;border:1px solid #93c5fd;border-radius:var(--radius);font-size:12px;background:var(--bg);color:var(--text);font-family:monospace;outline:none}
-.setup-row button{padding:0 12px;height:32px;font-size:12px;font-weight:600;background:#2563eb;color:#fff;border:none;border-radius:var(--radius);cursor:pointer}
-.api-ok{display:flex;align-items:center;gap:8px;background:var(--green-bg);border:1px solid #86efac;border-radius:var(--radius);padding:8px 12px;margin-bottom:1rem}
-.api-ok span{font-size:13px;color:var(--green);font-weight:500}
-.api-change{background:none;border:none;color:var(--blue);font-size:12px;cursor:pointer;margin-left:4px}
-/* SEARCH */
-.search-row{display:flex;gap:8px;margin-bottom:1.25rem}
-.search-row input{flex:1;padding:0 12px;height:36px;border:1px solid var(--border2);border-radius:var(--radius);font-size:14px;background:var(--bg);color:var(--text);letter-spacing:.05em;text-transform:uppercase;outline:none}
-.search-row input::placeholder{text-transform:none;letter-spacing:normal;color:var(--text3)}
-.search-row input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
-.search-row button{padding:0 18px;height:36px;font-size:13px;font-weight:600;background:#111827;color:#fff;border:none;border-radius:var(--radius);cursor:pointer;white-space:nowrap}
-.search-row button:disabled{opacity:.4;cursor:not-allowed}
-/* SECTION LABEL */
-.sec-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
-/* COMPANY GRID */
-.company-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:1.5rem}
-.company-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;cursor:pointer;transition:box-shadow .15s,transform .1s;position:relative;overflow:hidden}
-.company-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);transform:translateY(-1px)}
-.company-card.active{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.2)}
-.company-card.c-danger{border-left:3px solid var(--red)}
-.company-card.c-warning{border-left:3px solid #f59e0b}
-.company-card.c-ok{border-left:3px solid var(--green)}
-.card-name{font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.3}
-.card-num{font-size:11px;color:var(--text3);margin-bottom:10px}
-.card-badges{display:flex;flex-direction:column;gap:4px}
-.card-badge{display:flex;align-items:center;justify-content:space-between;font-size:11px}
-.badge-label{color:var(--text2)}
-.badge-val{font-weight:600;font-size:11px}
-.badge-val.ok{color:var(--green)}
-.badge-val.warning{color:var(--amber)}
-.badge-val.danger,.badge-val.overdue{color:var(--red)}
-.card-rm{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;opacity:0;transition:opacity .15s}
-.company-card:hover .card-rm{opacity:1}
-/* POPUP / MODAL */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* NAV */
+.nav{display:flex;align-items:center;gap:12px;padding:16px 24px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+.nav-logo{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.3px;margin-right:8px}
+.nav-logo span{color:var(--accent)}
+.tab-btn{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .2s;background:transparent;color:var(--text2)}
+.tab-btn:hover{background:var(--surface2);color:var(--text)}
+.tab-btn.active{background:var(--accent);color:#fff}
+.nav-search{margin-left:auto;position:relative}
+.nav-search input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px 7px 34px;font-size:13px;color:var(--text);outline:none;width:220px;transition:border-color .2s}
+.nav-search input:focus{border-color:var(--accent)}
+.nav-search input::placeholder{color:var(--text3)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+.nav-stats{display:flex;gap:16px;margin-left:16px}
+.nav-stat{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:5px}
+.stat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* VIEWS */
+.view{display:none}.view.active{display:block}
+
+/* CLIENTS VIEW */
+.clients-wrap{padding:24px}
+.clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.client-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.client-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.client-card.c-red::before{background:var(--red)}
+.client-card.c-amber::before{background:var(--amber)}
+.client-card.c-green::before{background:var(--green)}
+.client-card.c-grey::before{background:var(--text3)}
+.client-card:hover{background:var(--surface2);border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.card-avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;color:#fff}
+.card-status-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;letter-spacing:.03em}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge-grey{background:var(--surface3);color:var(--text3);border:1px solid var(--border)}
+.card-name{font-size:14px;font-weight:600;margin-bottom:3px;line-height:1.3}
+.card-director{font-size:12px;color:var(--text2);margin-bottom:12px}
+.card-dates{display:flex;flex-direction:column;gap:5px}
+.card-date-row{display:flex;align-items:center;justify-content:space-between}
+.date-label{font-size:11px;color:var(--text3)}
+.date-val{font-size:11px;font-weight:600}
+.date-val.red{color:var(--red)}
+.date-val.amber{color:var(--amber)}
+.date-val.green{color:var(--green)}
+.date-val.grey{color:var(--text3)}
+
+/* TRACKER VIEW */
+.tracker-wrap{display:grid;grid-template-columns:1fr 300px;min-height:calc(100vh - 57px)}
+.tracker-main{padding:24px;min-width:0}
+.tracker-cal{background:var(--surface);border-left:1px solid var(--border);padding:20px;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto}
+@media(max-width:860px){.tracker-wrap{grid-template-columns:1fr}.tracker-cal{display:none}}
+.tracker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.tracker-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;cursor:pointer;transition:all .2s;position:relative}
+.tracker-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.tracker-card.c-red::before{background:var(--red)}
+.tracker-card.c-amber::before{background:var(--amber)}
+.tracker-card.c-green::before{background:var(--green)}
+.tracker-card:hover{background:var(--surface2);border-color:var(--border2);transform:translateY(-1px)}
+.tc-name{font-size:13px;font-weight:600;margin-bottom:3px}
+.tc-num{font-size:11px;color:var(--text3);margin-bottom:10px}
+.tc-rows{display:flex;flex-direction:column;gap:4px}
+.tc-row{display:flex;justify-content:space-between;font-size:11px}
+.tc-lbl{color:var(--text3)}
+.tc-val.red{color:var(--red);font-weight:600}
+.tc-val.amber{color:var(--amber);font-weight:600}
+.tc-val.green{color:var(--green)}
+.tc-val.grey{color:var(--text3)}
+.add-row{display:flex;gap:8px;margin-bottom:20px}
+.add-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text);outline:none;text-transform:uppercase;letter-spacing:.05em}
+.add-row input::placeholder{text-transform:none;letter-spacing:normal;color:var(--text3)}
+.add-row input:focus{border-color:var(--accent)}
+.add-row button{padding:0 16px;height:36px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.add-row button:disabled{opacity:.4;cursor:not-allowed}
+.sec-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+
+/* CALENDAR */
+.cal-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.cal-title span{color:var(--text)}
+.cal-nav{display:flex;gap:4px}
+.cal-nav button{background:var(--surface2);border:1px solid var(--border);border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:12px;color:var(--text2);display:flex;align-items:center;justify-content:center}
+.cal-nav button:hover{background:var(--surface3)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:12px}
+.cal-dow{font-size:9px;font-weight:600;color:var(--text3);text-align:center;padding:3px 0}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:11px;cursor:default;position:relative}
+.cal-day.other{color:var(--text3)}
+.cal-day.today{background:var(--accent);color:#fff;font-weight:700}
+.cal-day.has-ev{cursor:pointer}
+.cal-day.has-ev:not(.today):hover{background:var(--surface2)}
+.ev-dot{width:3px;height:3px;border-radius:50%;position:absolute;bottom:2px;left:50%;transform:translateX(-50%)}
+.ev-dot.red{background:var(--red)}
+.ev-dot.amber{background:var(--amber)}
+.ev-dot.green{background:var(--green)}
+.cal-ev-list{display:flex;flex-direction:column;gap:6px}
+.cal-ev{padding:8px 10px;border-radius:8px;cursor:pointer;border-left:2px solid}
+.cal-ev.red{background:var(--red-bg);border-color:var(--red)}
+.cal-ev.amber{background:var(--amber-bg);border-color:var(--amber)}
+.cal-ev.green{background:var(--green-bg);border-color:var(--green)}
+.cal-ev-name{font-size:11px;font-weight:600}
+.cal-ev-type{font-size:10px;color:var(--text2)}
+.cal-ev-date{font-size:10px;font-weight:600}
+.cal-ev-date.red{color:var(--red)}
+.cal-ev-date.amber{color:var(--amber)}
+.cal-ev-date.green{color:var(--green)}
+.cal-section-lbl{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 6px}
+
+/* POPUP */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
 .overlay.open{display:flex}
-.popup{background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;width:min(560px,95vw);max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.2)}
-.popup-close{position:absolute;top:12px;right:12px;background:var(--bg2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;justify-content:center}
-.popup-co-name{font-size:18px;font-weight:700;margin-bottom:4px}
-.popup-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1.25rem}
-.popup-meta span{font-size:12px;color:var(--text2)}
-.status-active{color:var(--green);font-weight:600}
-.status-dissolved{color:var(--red);font-weight:600}
-/* DEADLINE CARDS IN POPUP */
-.dl-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
-.dl-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);border:1px solid}
-.dl-card.ok{background:var(--bg2);border-color:var(--border)}
-.dl-card.warning{background:var(--amber-light);border-color:#f59e0b}
-.dl-card.danger{background:var(--red-light);border-color:#ef4444}
-.dl-card.done{background:var(--bg2);border-color:var(--border);opacity:.55}
-.dl-card input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+.popup{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-xl);width:min(680px,100%);max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.popup-header{padding:24px 24px 0;position:sticky;top:0;background:var(--surface);z-index:1}
+.popup-close{position:absolute;top:16px;right:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;justify-content:center}
+.popup-close:hover{background:var(--surface3)}
+.popup-co-name{font-size:20px;font-weight:700;margin-bottom:4px}
+.popup-director{font-size:14px;color:var(--text2);margin-bottom:16px}
+.popup-tabs{display:flex;gap:4px;margin-bottom:0;border-bottom:1px solid var(--border);padding-bottom:0}
+.popup-tab{padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.popup-tab:hover{color:var(--text)}
+.popup-tab.active{color:var(--accent2);border-bottom-color:var(--accent)}
+.popup-body{padding:20px 24px 24px}
+.popup-tab-content{display:none}.popup-tab-content.active{display:block}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info-item{background:var(--surface2);border-radius:10px;padding:12px 14px;position:relative}
+.info-item.full{grid-column:1/-1}
+.info-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.info-value{font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:8px;word-break:break-all}
+.copy-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:2px 5px;border-radius:4px;flex-shrink:0;transition:all .15s}
+.copy-btn:hover{background:var(--surface3);color:var(--text)}
+.empty-val{color:var(--text3);font-style:italic;font-size:12px}
+
+/* COMPLIANCE IN POPUP */
+.dl-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid;margin-bottom:8px}
+.dl-card.ok{background:var(--green-bg);border-color:var(--green-border)}
+.dl-card.warning{background:var(--amber-bg);border-color:var(--amber-border)}
+.dl-card.danger{background:var(--red-bg);border-color:var(--red-border)}
+.dl-card.done-card{background:var(--surface2);border-color:var(--border);opacity:.5}
+.dl-card input[type=checkbox]{width:15px;height:15px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
 .dl-body{flex:1;min-width:0}
-.dl-top{display:flex;align-items:center;gap:6px;margin-bottom:2px}
-.dl-badge{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:8px;background:var(--bg2);color:var(--text2)}
-.dl-next{font-size:10px;color:var(--text3);font-style:italic}
+.dl-type{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
 .dl-label{font-size:13px;font-weight:500}
 .dl-sub{font-size:11px;color:var(--text2);margin-top:1px}
 .dl-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.pill{font-size:11px;padding:2px 8px;border-radius:8px;white-space:nowrap;font-weight:500}
-.pill.ok{background:var(--green-bg);color:#166534}
-.pill.warning{background:var(--amber-bg);color:var(--amber)}
-.pill.danger{background:var(--red-bg);color:var(--red)}
-.pill.overdue{background:var(--red-bg);color:#7f1d1d;font-weight:700}
-.pill.done-lbl{background:var(--green-bg);color:var(--green)}
-.dl-date{font-size:13px;font-weight:600;min-width:95px;text-align:right}
-.dl-date.ok{color:var(--text)}
-.dl-date.warning{color:var(--amber)}
-.dl-date.danger,.dl-date.overdue{color:var(--red)}
-.dl-date.done-d{text-decoration:line-through;color:var(--text3)}
-.done-toggle{background:none;border:1px solid var(--border);border-radius:var(--radius);padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:8px}
-.overdue-banner{background:var(--red-bg);border:1px solid #ef4444;border-radius:var(--radius);padding:8px 12px;margin-bottom:1rem;font-size:13px;color:#991b1b;font-weight:600}
-/* LOADING / ERROR */
-.loading{display:flex;align-items:center;gap:8px;padding:12px 0;color:var(--text2);font-size:13px}
-.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+.pill{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600;white-space:nowrap}
+.pill.red{background:var(--red-bg);color:var(--red)}
+.pill.amber{background:var(--amber-bg);color:var(--amber)}
+.pill.green{background:var(--green-bg);color:var(--green)}
+.pill.overdue{background:var(--red-bg);color:var(--red);font-weight:700}
+.dl-date{font-size:12px;font-weight:600;min-width:90px;text-align:right}
+.dl-date.red{color:var(--red)}.dl-date.amber{color:var(--amber)}.dl-date.green{color:var(--green)}
+.dl-date.done{text-decoration:line-through;color:var(--text3)}
+.done-toggle{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;margin:6px 0}
+
+/* API KEY */
+.setup-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.setup-box.hidden{display:none}
+.setup-title{font-size:13px;font-weight:600;color:var(--accent2);margin-bottom:8px}
+.setup-steps{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px}
+.setup-row{display:flex;gap:6px}
+.setup-row input{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:0 10px;height:32px;font-size:12px;color:var(--text);font-family:monospace;outline:none}
+.setup-row input:focus{border-color:var(--accent)}
+.setup-row button{padding:0 12px;height:32px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+.api-ok{display:flex;align-items:center;gap:8px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:8px;padding:8px 12px;margin-bottom:16px}
+.api-ok.hidden{display:none}
+.api-ok span{font-size:12px;color:var(--green);font-weight:500}
+.api-change{background:none;border:none;color:var(--accent2);font-size:11px;cursor:pointer}
+
+/* MISC */
+.loading{display:flex;align-items:center;gap:8px;color:var(--text2);font-size:13px;padding:8px 0}
+.spinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-.error-msg{background:var(--red-bg);border:1px solid #ef4444;border-radius:var(--radius);padding:10px 14px;color:#991b1b;font-size:13px;margin-bottom:1rem}
-/* CALENDAR */
-.cal-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
-.cal-nav{display:flex;gap:6px}
-.cal-nav button{background:none;border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:13px;color:var(--text2);display:flex;align-items:center;justify-content:center}
-.cal-nav button:hover{background:var(--bg2)}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:1rem}
-.cal-dow{font-size:10px;font-weight:600;color:var(--text3);text-align:center;padding:4px 0}
-.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:12px;cursor:default;position:relative;transition:background .1s}
-.cal-day.other-month{color:var(--text3)}
-.cal-day.today{background:#6366f1;color:#fff;font-weight:700}
-.cal-day.has-event{cursor:pointer}
-.cal-day.has-event:not(.today):hover{background:var(--bg2)}
-.event-dot{width:4px;height:4px;border-radius:50%;position:absolute;bottom:3px;left:50%;transform:translateX(-50%)}
-.event-dot.danger{background:var(--red)}
-.event-dot.warning{background:#f59e0b}
-.event-dot.ok{background:var(--green)}
-.cal-events{margin-top:.5rem}
-.cal-event-item{padding:8px 10px;border-radius:var(--radius);margin-bottom:6px;border-left:3px solid;cursor:pointer}
-.cal-event-item.danger{background:var(--red-light);border-color:var(--red)}
-.cal-event-item.warning{background:var(--amber-light);border-color:#f59e0b}
-.cal-event-item.ok{background:var(--green-light);border-color:var(--green)}
-.cal-event-name{font-size:12px;font-weight:600}
-.cal-event-type{font-size:11px;color:var(--text2)}
-.cal-event-date{font-size:11px;font-weight:500}
-.cal-month-events{margin-top:1rem}
-.cal-month-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
-hr{border:none;border-top:1px solid var(--border);margin:1rem 0}
-.empty-state{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:14px}
+.err-msg{background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:10px 14px;color:var(--red);font-size:13px;margin-bottom:12px}
+.overdue-banner{background:var(--red-bg);border:1px solid var(--red-border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--red);font-weight:600;margin-bottom:12px}
+.empty{text-align:center;padding:48px;color:var(--text3);font-size:14px}
+hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </style>
 </head>
 <body>
-<div class="app">
-  <!-- MAIN COLUMN -->
-  <div class="main-col">
-    <div class="app-title">UK Compliance Tracker</div>
-    <div class="app-sub">Companies House — müşteri portföy takibi</div>
 
-    <div id="setupBox" class="setup-box">
-      <div class="setup-title">🔑 API Key (sadece ilk seferde)</div>
-      <div class="setup-steps">
-        1. <a href="https://developer.company-information.service.gov.uk" target="_blank" style="color:#2563eb;">developer.company-information.service.gov.uk</a><br>
-        2. Hesabınıza giriş → API key kopyalayın
-      </div>
-      <div class="setup-row">
-        <input type="text" id="apiKeyInput" placeholder="API key yapıştırın..." />
-        <button onclick="saveApiKey()">Kaydet</button>
-      </div>
-    </div>
-    <div id="apiOk" class="api-ok hidden">
-      <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0"></div>
-      <span>API key kayıtlı — hazır</span>
-      <button class="api-change" onclick="changeKey()">Değiştir</button>
-    </div>
-
-    <div class="sec-label">Şirket Ekle</div>
-    <div class="search-row">
-      <input type="text" id="regInput" placeholder="Kayıt numarası (örn: 12345678)" maxlength="10" />
-      <button id="searchBtn" onclick="searchCompany()">Sorgula & Ekle</button>
-    </div>
-
-    <div id="searchStatus"></div>
-
-    <div class="sec-label" id="gridLabel" style="display:none">Müşteri Portföyü</div>
-    <div class="company-grid" id="companyGrid"></div>
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">Client<span>Hub</span></div>
+  <button class="tab-btn active" onclick="switchView('clients')">👥 Müşteriler</button>
+  <button class="tab-btn" onclick="switchView('tracker')">📋 Compliance</button>
+  <div class="nav-search">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="navSearch" placeholder="Şirket ara..." oninput="handleSearch(this.value)">
   </div>
+  <div class="nav-stats">
+    <div class="nav-stat"><div class="stat-dot" style="background:var(--red)"></div><span id="statRed">0</span> acil</div>
+    <div class="nav-stat"><div class="stat-dot" style="background:var(--amber)"></div><span id="statAmber">0</span> yaklaşıyor</div>
+    <div class="nav-stat"><div class="stat-dot" style="background:var(--green)"></div><span id="statGreen">0</span> tamam</div>
+  </div>
+</nav>
 
-  <!-- CALENDAR COLUMN -->
-  <div class="cal-col">
-    <div class="cal-title">
-      <span id="calMonthLabel"></span>
-      <div class="cal-nav">
-        <button onclick="calPrev()">‹</button>
-        <button onclick="calToday()">●</button>
-        <button onclick="calNext()">›</button>
+<!-- CLIENTS VIEW -->
+<div class="view active" id="view-clients">
+  <div class="clients-wrap">
+    <div class="clients-grid" id="clientsGrid"></div>
+  </div>
+</div>
+
+<!-- TRACKER VIEW -->
+<div class="view" id="view-tracker">
+  <div class="tracker-wrap">
+    <div class="tracker-main">
+      <div id="apiSetupBox" class="setup-box">
+        <div class="setup-title">🔑 Companies House API Key</div>
+        <div class="setup-steps">
+          <a href="https://developer.company-information.service.gov.uk" target="_blank" style="color:var(--accent2)">developer.company-information.service.gov.uk</a> → giriş yapın → API key kopyalayın
+        </div>
+        <div class="setup-row">
+          <input type="text" id="apiKeyInput" placeholder="API key yapıştırın..." />
+          <button onclick="saveApiKey()">Kaydet</button>
+        </div>
       </div>
+      <div id="apiOkBox" class="api-ok hidden">
+        <div style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0"></div>
+        <span>API key kayıtlı</span>
+        <button class="api-change" onclick="changeKey()">Değiştir</button>
+      </div>
+
+      <div class="sec-label">Şirket Ekle</div>
+      <div class="add-row">
+        <input type="text" id="regInput" placeholder="Companies House kayıt numarası" maxlength="10">
+        <button id="addBtn" onclick="addCompany()">Ekle & Sorgula</button>
+      </div>
+      <div id="addStatus"></div>
+
+      <div class="sec-label" id="tcGridLabel">Compliance Takibi</div>
+      <div class="tracker-grid" id="trackerGrid"></div>
     </div>
-    <div class="cal-grid" id="calGrid"></div>
-    <div class="cal-month-events">
-      <div class="cal-month-label">Bu Ay Yaklaşanlar</div>
-      <div id="calMonthEvents"></div>
+    <div class="tracker-cal">
+      <div class="cal-title">
+        <span id="calLabel"></span>
+        <div class="cal-nav">
+          <button onclick="calPrev()">‹</button>
+          <button onclick="calNow()">·</button>
+          <button onclick="calNext()">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-section-lbl">Bu Ay</div>
+      <div class="cal-ev-list" id="calEvents"></div>
     </div>
   </div>
 </div>
 
-<!-- POPUP OVERLAY -->
-<div class="overlay" id="overlay" onclick="closePopup(event)">
+<!-- POPUP -->
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
   <div class="popup" id="popup">
-    <button class="popup-close" onclick="closePopupDirect()">✕</button>
-    <div id="popupContent"></div>
+    <div class="popup-header">
+      <button class="popup-close" onclick="closePopup()">✕</button>
+      <div class="popup-co-name" id="popupName"></div>
+      <div class="popup-director" id="popupDirector"></div>
+      <div class="popup-tabs" id="popupTabs"></div>
+    </div>
+    <div class="popup-body" id="popupBody"></div>
   </div>
 </div>
 
 <script>
+// ── DATA ──
+const CLIENTS_DATA = [{"ref": "1", "name": "Simla Collection Ltd", "director": "Simla Erkuloglu", "password": "simlacollection2020", "gateway": "12 20 69 64 20 88", "email": "simlaerkuloglu@gmail.com", "companyNo": "13072790", "utr": "9448400887", "personalUtr": "1042864006", "authCode": "PX2XCW", "nino": "SW508949B", "payeRef": "120/VE35049", "accountOfficeRef": "120PD02432269"}, {"ref": "2", "name": "Yildiz Jewelry Ltd", "director": "Ilkay Deren", "password": "yildizjewelry2020", "gateway": "78 94 28 31 71 09", "email": "yildiz.89ilkay@gmail.com", "companyNo": "13092722", "utr": "8551501877", "personalUtr": "9955543940", "authCode": "G48UCE", "nino": "SW434870C", "payeRef": "120/UE33095", "accountOfficeRef": "120PV02398875"}, {"ref": "3", "name": "Stf Mechanics Ltd", "director": "Ugur Ozturk", "password": "stfmechanic2020", "gateway": "15 58 88 12 21 18", "email": "ugurozturk723@gmail.com", "companyNo": "13092668", "utr": "7931011736", "personalUtr": "7667872811", "authCode": "ANAJMY", "nino": "SW820991D", "payeRef": "120/KE37134", "accountOfficeRef": "120PR02466744"}, {"ref": "5", "name": "Fapi Textile Ltd", "director": "Fatih Pirbudak", "password": "fapitextile2020", "gateway": "13 48 02 46 16 46", "email": "fatihpirbudak1985@gmail.com", "companyNo": "13103290", "utr": "7792114464", "personalUtr": "1125668799", "authCode": "VFVJW6", "nino": "SW929110C", "payeRef": "120/BE36082", "accountOfficeRef": "120PX02449159"}, {"ref": "6", "name": "Han Tailoring Ltd", "director": "Mehmet Han", "password": "hantailoring2020", "gateway": "59 62 21 19 10 18", "email": "mehmetthan55@gmail.com", "companyNo": "13102898", "utr": "6162916138", "personalUtr": "9517149452", "authCode": "ENG4UV", "nino": "SW634110C", "payeRef": "120/VE34787", "accountOfficeRef": "120PR02426806"}, {"ref": "7", "name": "Mhy Education Ltd", "director": "Mustafa Hilmi Yesilyurt", "password": "mhyeducation2020", "gateway": "98 05 03 79 42 04", "email": "mustafayesilyurt2702@gmail.com", "companyNo": "13103007", "utr": "2206113248", "personalUtr": "8388288290", "authCode": "UU9A6U", "nino": "NJ081507D", "payeRef": "120/LE40051", "accountOfficeRef": "120PG02515418"}, {"ref": "8", "name": "Mirzaoglu Ltd", "director": "Mehmet Mirzaoglu", "password": "mirzaoglu2021", "gateway": "56 83 51 82 19 88", "email": "mirzaoglumehmet800@gmail.com", "companyNo": "13189606", "utr": "2248817407", "personalUtr": "3626653319", "authCode": "BQ6FKD", "nino": "SW475191D", "payeRef": "120/XE34440", "accountOfficeRef": "120PH02421694"}, {"ref": "9", "name": "Okten Building Services Ltd", "director": "Abdulbaki \u00d6kten", "password": "oktenltd2021", "gateway": "55 32 25 47 46 31", "email": "caanbaran4734@gmail.com", "companyNo": "13147041", "utr": "9321011175", "personalUtr": "2113888158", "authCode": "AHG7N9", "nino": "SW740846C", "payeRef": "475/RE31190", "accountOfficeRef": "475PR01583164"}, {"ref": "10", "name": "Ceyket Fashion Ltd", "director": "\u00c7i\u011fdem K\u00fc\u00e7\u00fck", "password": "ceyket2021", "gateway": "28 38 48 73 73 16", "email": "cigdemkck.uk@gmail.com", "companyNo": "13214231", "utr": "8351618329", "personalUtr": "6449058966", "authCode": "YFWTYQ", "nino": "SW495523D", "payeRef": "120/SE35050", "accountOfficeRef": "120PD02432285"}, {"ref": "11", "name": "Sameat Chef Ltd", "director": "Samet Yildiz", "password": "sameatltd2020", "gateway": "30 80 27 86 54 31", "email": "sa.meat5885@gmail.com", "companyNo": "13103118", "utr": "2879819991", "personalUtr": "6241070651", "authCode": "HBMK4M", "nino": "SW387826C", "payeRef": "120/BE36675", "accountOfficeRef": "120PC02458854"}, {"ref": "12", "name": "Dat Hairdress Ltd", "director": "Vedat Karamavruc", "password": "datbarber2020", "gateway": "71 66 77 42 51 73", "email": "vedatdat38@hotmail.com", "companyNo": "13212632", "utr": "7995717816", "personalUtr": "3518286506", "authCode": "RGD2F9", "nino": "SW871769B", "payeRef": "120/HE37364", "accountOfficeRef": "120PP02470544"}, {"ref": "13", "name": "Sozmen Consultancy Ltd", "director": "Muhammet Onder Sozmen", "password": "ingiltere2021", "gateway": "51 15 16 44 82 28", "email": "ondersozmen@gmail.com", "companyNo": "13151992", "utr": "6546723604", "personalUtr": "9794831353", "authCode": "4KJGB4", "nino": "SW469692A", "payeRef": "120/SE32757", "accountOfficeRef": "120PR02393134"}, {"ref": "14", "name": "Alsa Building Services Ltd", "director": "Ali Sahin", "password": "alsaltd2021", "gateway": "61 77 51 67 49 67", "email": "sahinlerr46@hotmail.com", "companyNo": "13185334", "utr": "4657426539", "personalUtr": "6823679170", "authCode": "DRVD8C", "nino": "SW552181B", "payeRef": "120/ZE34448", "accountOfficeRef": "120PH02421856"}, {"ref": "15", "name": "Savas Consultancy Ltd", "director": "Savas Demirkiran", "password": "savasltd2021", "gateway": "15 83 59 04 58 89", "email": "sav.demir21@gmail.com", "companyNo": "13212939", "utr": "4165004609", "personalUtr": "6059971096", "authCode": "G46RGD", "nino": "SW668602C", "payeRef": "120/ZE34973", "accountOfficeRef": "120PF02430934"}, {"ref": "16", "name": "Magic Stars Academy Ltd", "director": "Aysegul Cikrikci", "password": "magicstars2021", "gateway": "52 89 65 31 67 20", "email": "aysegul.uk@hotmail.com", "companyNo": "13225065", "utr": "1228915841", "personalUtr": "7069333963", "authCode": "8KWC2T", "nino": "SW767293B", "payeRef": "120/KE36068", "accountOfficeRef": "120PC02448948"}, {"ref": "17", "name": "Pekunlu Utku Mechanics Ltd", "director": "Murat Pekunlu", "password": "pekunlu2021", "gateway": "49 81 91 89 06 18", "email": "muratpekunlu29@gmail.com", "companyNo": "13320519", "utr": "4099019503", "personalUtr": "2163596185", "authCode": "2HHFPV", "nino": "TK101984A", "payeRef": "475/LE37350", "accountOfficeRef": "475PT01602585"}, {"ref": "18", "name": "Nurten Cleaning Ltd", "director": "Nurten Ozdemir", "password": "nurten2021", "gateway": "38 49 31 30 12 78", "email": "nurtenozdemir0601@gmail.com", "companyNo": "13249804", "utr": "1828917676", "personalUtr": "5109783748", "authCode": "KVNJ3U", "nino": "SW645567D", "payeRef": "120/EE34536", "accountOfficeRef": "120PW02423355"}, {"ref": "19", "name": "Caraers Limited", "director": "Sunay Karaer", "password": "caraers2021", "gateway": "25 41 85 26 60 83", "email": "sunaykaraer@gmail.com", "companyNo": "13326399", "utr": "2926525412", "personalUtr": "5353865122", "authCode": "XA3N82", "nino": "NJ822569B", "payeRef": "120/EE38386", "accountOfficeRef": "120PA02487380"}, {"ref": "20", "name": "Ssas Care Ltd", "director": "Sezen Sinikci", "password": "sinikci2021", "gateway": "97 63 54 27 64 50", "email": "sezensinikci3@gmail.com", "companyNo": "13326137", "utr": "1792013318", "personalUtr": "9368192269", "authCode": "EBN24G", "nino": "SW899089B", "payeRef": "120/FE43739", "accountOfficeRef": "120PL02578637"}, {"ref": "21", "name": "Esk Food Ltd", "director": "Eyyup Sabri Kankilic", "password": "kankilic2021", "gateway": "91 91 42 52 04 24", "email": "sabrieyyup@outlook.com", "companyNo": "13350296", "utr": "2772117288", "personalUtr": "1514163872", "authCode": "HA23XM", "nino": "SW893199D", "payeRef": "120/LE36006", "accountOfficeRef": "120PY02447836"}, {"ref": "23", "name": "The Bougainvillea Beauty Ltd", "director": "Hatice Tek", "password": "haticetek2021", "gateway": "21 10 18 49 34 86", "email": "haticetek096@gmail.com", "companyNo": "13325830", "utr": "9693122686", "personalUtr": "8933350900", "authCode": "7WCNXE", "nino": "SW897258C", "payeRef": "120/VE37984", "accountOfficeRef": "120PH02480756"}, {"ref": "24", "name": "Komazon Limited", "director": "Hasan Ozdemir", "password": "komazon2021", "gateway": "15 09 40 48 69 49", "email": "hasanozdmr46@gmail.com", "companyNo": "13370020", "utr": "1638226201", "personalUtr": "4371269544", "authCode": "F2MVGH", "nino": "SW814728A", "payeRef": "120/RE37129", "accountOfficeRef": "120PS02466664"}, {"ref": "25", "name": "Yipkins Limited", "director": "Guray Yipkin", "password": "gurayipkin2021", "gateway": "11 55 37 34 87 91", "email": "gyipkin@gmail.com", "companyNo": "13325367", "utr": "3156929517", "personalUtr": "3421078146", "authCode": "E2NNG8", "nino": "SW885998C", "payeRef": "120/EE41062", "accountOfficeRef": "120PE02532531"}, {"ref": "26", "name": "Mario Bookkeeping Ltd", "director": "Atiye Ozen", "password": "atiyeozen2021", "gateway": "50 02 89 63 66 43", "email": "atiyeozen@gmail.com", "companyNo": "13458347", "utr": "8576216588", "personalUtr": "6223349634", "authCode": "GUE7AT", "nino": "SW922369B", "payeRef": "120/ZE37629", "accountOfficeRef": "120PQ02474916"}, {"ref": "27", "name": "Rain Hairdressing Ltd", "director": "Yagmur Alaylar", "password": "alaylar2021", "gateway": "52 10 06 43 01 47", "email": "rainhair25@gmail.com", "companyNo": "13568682", "utr": "2938320425", "personalUtr": "6174086793", "authCode": "HURQTB", "nino": "SX990212A", "payeRef": "120/EE47260", "accountOfficeRef": "120PJ02640001"}, {"ref": "28", "name": "Zeko Education Ltd", "director": "Zeynel Koca", "password": "zeynelkoca2021", "gateway": "10 11 45 69 02 46", "email": "zeynelkocauk@yandex.com", "companyNo": "13568511", "utr": "1293612712", "personalUtr": "8093165660", "authCode": "PV4NK7", "nino": "SX973288A", "payeRef": "120/EE39237", "accountOfficeRef": "120PR02501556"}, {"ref": "29", "name": "Deniz Building Services Ltd", "director": "Tulgay Deniz", "password": "tulgaydeniz2021", "gateway": "98 22 14 36 98 31", "email": "deniztolga021@gmail.com", "companyNo": "13572807", "utr": "1117523145", "personalUtr": "3523844583", "authCode": "V6YGL6", "nino": "TK047644A", "payeRef": "120/YE58288", "accountOfficeRef": "120PZ02832867"}, {"ref": "30", "name": "M&C Investment Consultancy Ltd", "director": "Muhamed Elnur", "password": "3031mc3031", "gateway": "89 09 55 39 42 32", "email": "m.elnur@turkishbusinesshub.com.tr", "companyNo": "13578862", "utr": "2276629301", "personalUtr": "2197564427", "authCode": "LPFVU2", "nino": "SX995752A", "payeRef": "120/XE40504", "accountOfficeRef": "120PF02523282"}, {"ref": "31", "name": "OK Repair Services Ltd", "director": "Okkes Kaya", "password": "Okkes12345", "gateway": "53 99 98 31 19 02", "email": "okkess2772@gmail.com", "companyNo": "13409569", "utr": "4010216441", "personalUtr": "7774240912", "authCode": "RHENM2", "nino": "SW887707D", "payeRef": "475/BE32410", "accountOfficeRef": "475PW01587040"}, {"ref": "32", "name": "Lew Kosk Ltd", "director": "Levent Erdogan", "password": "ingiltere2021", "gateway": "87 26 43 34 17 66", "email": "levent2403@gmail.com", "companyNo": "13952431", "utr": "8447921870", "personalUtr": "5155873473", "authCode": "HH2LLQ", "nino": "NJ821269B", "payeRef": "120/SE45210", "accountOfficeRef": "120PV02604235"}, {"ref": "34", "name": "Sirius Quantum Solutions Ltd", "director": "Derya Karli", "password": "ingiltere2021", "gateway": "53 02 42 92 82 28", "email": "d.deryakarli@gmail.com", "companyNo": "13754711", "utr": "1622622459", "personalUtr": "5873565052", "authCode": "HBVWPR", "nino": "SW932994C", "payeRef": "120/SE51937", "accountOfficeRef": "120PR02720674"}, {"ref": "35", "name": "Coupling London Ltd", "director": "Serdal Topal", "password": "ingiltere2021", "gateway": "97 56 75 58 12 71", "email": "serdaltopal67@gmail.com", "companyNo": "12569695", "utr": "8807223224", "personalUtr": "5698368046", "authCode": "BQL26U", "nino": "SW069621B", "payeRef": "120/ME30708", "accountOfficeRef": "120PE02358273"}, {"ref": "36", "name": "Ufuk Dal Consultancy Ltd", "director": "Ufuk Dal", "password": "ingiltere2021", "gateway": "84 42 48 48 65 43", "email": "u.ufukdal@gmail.com", "companyNo": "14556365", "utr": "1240717771", "personalUtr": "9041352790", "authCode": "9JJCMK", "nino": "TK405156A", "payeRef": "120/FE61391", "accountOfficeRef": "120PT02887262"}, {"ref": "38", "name": "Barber Quma", "director": "Cuma Caglak", "password": "cumacaglak2021", "gateway": "81 14 94 57 90 43", "email": "cumacaglakuk@yandex.com", "companyNo": "13350493", "utr": "8123921074", "personalUtr": "9202699431", "authCode": "VY2NN2", "nino": "SW911217B", "payeRef": "120/UE33063", "accountOfficeRef": "120PV02398327"}, {"ref": "43", "name": "Goldie Oldie Limited", "director": "Simla Erkuloglu", "password": "ingiltere2021", "gateway": "99 48 82 84 24 62", "email": "simlaerkuloglu@gmail.com", "companyNo": "15300546", "utr": "1339125585", "personalUtr": "", "authCode": "KYK6XG", "nino": "", "payeRef": "120/AE89575", "accountOfficeRef": "120PD03379096"}, {"ref": "44", "name": "OA & Co Property Management Ltd", "director": "Oguzhan Aydore", "password": "ingiltere2021", "gateway": "85 39 50 77 18 21", "email": "oguzhan.aydore@gmail.com", "companyNo": "SC795537", "utr": "2702810877", "personalUtr": "9097244508", "authCode": "TERFLB", "nino": "SW014159D", "payeRef": "", "accountOfficeRef": ""}, {"ref": "47", "name": "The Camden Beads London Ltd", "director": "Simla Erkuloglu", "password": "ingiltere2021", "gateway": "67 70 58 05 26 74", "email": "simlaerkuloglu@gmail.com", "companyNo": "15557812", "utr": "9368107831", "personalUtr": "", "authCode": "89JJAA", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "49", "name": "Koman Consultancy Ltd", "director": "Anil Koman", "password": "anilkoman2024", "gateway": "34 88 04 3 501 87", "email": "anil@kitup.net", "companyNo": "11553077", "utr": "9537026960", "personalUtr": "6479057910", "authCode": "U7EPJR", "nino": "SX106633B", "payeRef": "120/WE00554", "accountOfficeRef": "120PS01915243"}, {"ref": "50", "name": "Esk 63 Limited", "director": "Eyyup Sabri Kankilic", "password": "ingiltere2021", "gateway": "12 32 16 69 91 22", "email": "sabrieyyup@outlook.com", "companyNo": "15701692", "utr": "8138622744", "personalUtr": "", "authCode": "2DYG3K", "nino": "", "payeRef": "120/EE86716", "accountOfficeRef": "120PW03326745"}, {"ref": "51", "name": "Asko Ltd", "director": "Zeynel Koca", "password": "ingiltere2021", "gateway": "89 46 21 17 84 66", "email": "zeynelkocauk@yandex.com", "companyNo": "14460869", "utr": "6176521469", "personalUtr": "", "authCode": "NCRGHP", "nino": "", "payeRef": "120/UE84831", "accountOfficeRef": "120PG03292561"}, {"ref": "52", "name": "Smyrna Services Ltd", "director": "Zubeyde Karakas", "password": "ingiltere2021", "gateway": "52 49 03 12 40 84", "email": "zubeyde.karakas90@outlook.com", "companyNo": "15754661", "utr": "7487111786", "personalUtr": "", "authCode": "932ALD", "nino": "SW836743D", "payeRef": "120/ME82012", "accountOfficeRef": "120PR03243313"}, {"ref": "53", "name": "Alperen Ozyilmaz Ltd", "director": "Alperen Ozyilmaz", "password": "", "gateway": "", "email": "ozyilmaz.proje@gmail.com", "companyNo": "15232761", "utr": "3109221682", "personalUtr": "", "authCode": "3GAENF", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "54", "name": "Beyzalando Ltd", "director": "Ahmet Can Saner", "password": "ingiltere2021", "gateway": "33 87 79 04 54 07", "email": "", "companyNo": "15836259", "utr": "3718117082", "personalUtr": "", "authCode": "GFGWD7", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "55", "name": "Nautical Horizan Limited", "director": "Orhan Turkmenoglu", "password": "ingiltere2021", "gateway": "36 02 09 12 28 14", "email": "", "companyNo": "15841130", "utr": "4947516100", "personalUtr": "", "authCode": "LHMCMB", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "58", "name": "Aydore Ltd", "director": "Halil Ibrahim Aydore", "password": "ingiltere2021", "gateway": "22 10 93 51 48 14", "email": "", "companyNo": "15939538", "utr": "6871123053", "personalUtr": "", "authCode": "64HDK9", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "59", "name": "Kotil International Law Ltd", "director": "Eren Kotil", "password": "ingiltere2021", "gateway": "60 54 02 73 15 07", "email": "", "companyNo": "15939315", "utr": "7762215008", "personalUtr": "", "authCode": "E9D27L", "nino": "503990293", "payeRef": "05.09.2024", "accountOfficeRef": ""}, {"ref": "60", "name": "Appnova Enterprises Ltd", "director": "Ercan Cakmak", "password": "", "gateway": "", "email": "", "companyNo": "16016844", "utr": "9170914720", "personalUtr": "", "authCode": "L4VV6N", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "61", "name": "Redlight Global Ltd", "director": "Ahmet Ozyilmaz", "password": "ingiltere2021", "gateway": "88 41 75 90 12 20", "email": "", "companyNo": "16124773", "utr": "1207328837", "personalUtr": "", "authCode": "MK44M7", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "63", "name": "Power Auto Parts Ltd", "director": "Yasin Cikrikci", "password": "ingiltere2021", "gateway": "98 18 24 33 11 32", "email": "", "companyNo": "16148622", "utr": "1046319388", "personalUtr": "", "authCode": "APB9GG", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "65", "name": "Kuasar UK Ltd", "director": "Fatih Akcakoyunluoglu", "password": "ingiltere2021", "gateway": "49 46 19 10 33 34", "email": "ecedirik@kuasarmarin.com", "companyNo": "SC833626", "utr": "8136717298", "personalUtr": "", "authCode": "EQJ3LM", "nino": "", "payeRef": "120/KE96007", "accountOfficeRef": "120PR03497717"}, {"ref": "66", "name": "Just Bead It Limited", "director": "Simla Erkuloglu", "password": "ingiltere2021", "gateway": "82 82 12 69 05 09", "email": "", "companyNo": "16242988", "utr": "1564204840", "personalUtr": "", "authCode": "8GB9X3", "nino": "", "payeRef": "120/UE94512", "accountOfficeRef": "120PZ03470534"}, {"ref": "67", "name": "Ay-Zey Consultancy Ltd", "director": "Ayse Gul Aktas", "password": "", "gateway": "", "email": "info@ay-zeyconsultancy.com", "companyNo": "13228177", "utr": "2380222974", "personalUtr": "2764062586", "authCode": "YJ38B7", "nino": "SW605793B", "payeRef": "120/LE31127", "accountOfficeRef": "120PD02365708"}, {"ref": "68", "name": "Se Hair and Skin Clinic Ltd", "director": "Seda Dogan", "password": "ingiltere2021", "gateway": "48 99 53 92 78 23", "email": "", "companyNo": "16283202", "utr": "2892422427", "personalUtr": "", "authCode": "2XC7U3", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "69", "name": "Cve Motors Uk Ltd", "director": "Volkan Kocaturk", "password": "ingiltere2021", "gateway": "25 20 02 30 67 12", "email": "", "companyNo": "SC842200", "utr": "", "personalUtr": "", "authCode": "", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "70", "name": "Solemarin UK Limited", "director": "Umut Guler", "password": "ingiltere2021", "gateway": "22 55 31 07 77 46", "email": "", "companyNo": "16472128", "utr": "9571628585", "personalUtr": "", "authCode": "GNNR83", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "71", "name": "Windryx Ltd", "director": "Karine Makarova", "password": "ingiltere2021", "gateway": "82 33 96 63 52 34", "email": "mlkcemsas@gmail.com", "companyNo": "16657738", "utr": "8210115681", "personalUtr": "", "authCode": "GYY7NM", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "73", "name": "Velo Delivery Ltd", "director": "Baris Sarikaya", "password": "ingiltere2021", "gateway": "82 75 56 47 40 46", "email": "", "companyNo": "16690584", "utr": "4046206436", "personalUtr": "", "authCode": "KMLCXW", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "74", "name": "Dee Herbal Limited", "director": "Deniz Vuslat Ondersev", "password": "ingiltere2021", "gateway": "34 58 20 34 57 39", "email": "vouslat@gmail.com", "companyNo": "16690258", "utr": "", "personalUtr": "", "authCode": "", "nino": "SZ274576A", "payeRef": "", "accountOfficeRef": ""}, {"ref": "75", "name": "Troya Space Ltd", "director": "Duygu Kahraman", "password": "ingiltere2021", "gateway": "18 76 95 44 71 68", "email": "", "companyNo": "16712840", "utr": "4700215160", "personalUtr": "", "authCode": "43CGT8", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "76", "name": "Echka Ltd", "director": "Anil Koman", "password": "ingiltere2021", "gateway": "27 76 29 91 12 47", "email": "anil@kitup.net", "companyNo": "16745013", "utr": "", "personalUtr": "", "authCode": "MMR8X7", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "77", "name": "Sunset Blinds Global Ltd", "director": "Timucin Tuncay", "password": "ingiltere2021", "gateway": "25 41 09 17 92 27", "email": "tuncaytimucin@gmail.com", "companyNo": "16930694", "utr": "7757600758", "personalUtr": "", "authCode": "", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "79", "name": "Martolos Intelligence Limited", "director": "Ali Burak Daricili", "password": "ingiltere2021", "gateway": "81 48 96 38 17 86", "email": "", "companyNo": "14935306", "utr": "2682324537", "personalUtr": "", "authCode": "Q9BYEB", "nino": "", "payeRef": "", "accountOfficeRef": ""}, {"ref": "", "name": "Br Cyber Security Global Ltd", "director": "Mustafa Komut", "password": "ingiltere2021", "gateway": "78 74 59 23 62 56", "email": "", "companyNo": "16167617", "utr": "7443311852", "personalUtr": "", "authCode": "XCUDQP", "nino": "BAB", "payeRef": "307", "accountOfficeRef": ""}];
 const API_BASE = "/api";
+
 let apiKey = localStorage.getItem('ch_api_key') || '';
-let saved = JSON.parse(localStorage.getItem('ch_saved') || '{}');
+let trackerData = JSON.parse(localStorage.getItem('ch_tracker') || '{}');
 let doneItems = JSON.parse(localStorage.getItem('ch_done') || '{}');
-let showDoneMap = {};
-let calYear, calMonth;
+let showDone = {};
+let calY, calM;
+let searchQ = '';
+let currentPopupNum = null;
+
 const today = new Date(); today.setHours(0,0,0,0);
-calYear = today.getFullYear(); calMonth = today.getMonth();
+calY = today.getFullYear(); calM = today.getMonth();
 
 function persist() {
-  localStorage.setItem('ch_saved', JSON.stringify(saved));
+  localStorage.setItem('ch_tracker', JSON.stringify(trackerData));
   localStorage.setItem('ch_done', JSON.stringify(doneItems));
 }
 
-function saveApiKey() {
-  const v = document.getElementById('apiKeyInput').value.trim();
-  if (!v) return;
-  apiKey = v;
-  localStorage.setItem('ch_api_key', apiKey);
-  renderApiStatus();
-}
-function changeKey() {
-  document.getElementById('apiOk').classList.add('hidden');
-  document.getElementById('setupBox').classList.remove('hidden');
-  document.getElementById('apiKeyInput').value = apiKey;
-}
-function renderApiStatus() {
-  if (apiKey) {
-    document.getElementById('setupBox').classList.add('hidden');
-    document.getElementById('apiOk').classList.remove('hidden');
-  } else {
-    document.getElementById('setupBox').classList.remove('hidden');
-    document.getElementById('apiOk').classList.add('hidden');
-  }
+// ── CLIENT DATA LOOKUP ──
+function getClientByNo(no) {
+  const padded = no.padStart(8,'0');
+  return CLIENTS_DATA.find(c => c.companyNo === padded || c.companyNo === no) || null;
 }
 
+// ── COLORS ──
+const COLORS = ['#6c63ff','#22c55e','#f59e0b','#ef4444','#06b6d4','#ec4899','#8b5cf6','#14b8a6','#f97316','#84cc16'];
+function getColor(name) {
+  let h = 0; for(let c of name) h = (h*31+c.charCodeAt(0))&0xffff;
+  return COLORS[h % COLORS.length];
+}
+function initials(name) {
+  return name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+}
+
+// ── DATE UTILS ──
 function getStatus(ds) {
-  if (!ds) return { type: 'unknown', days: null };
+  if (!ds) return {type:'grey',days:null};
   const d = new Date(ds); d.setHours(0,0,0,0);
-  const diff = Math.round((d - today) / 86400000);
-  if (diff < 0) return { type: 'overdue', days: Math.abs(diff) };
-  if (diff <= 30) return { type: 'danger', days: diff };
-  if (diff <= 60) return { type: 'warning', days: diff };
-  return { type: 'ok', days: diff };
+  const diff = Math.round((d-today)/86400000);
+  if (diff < 0) return {type:'red',days:Math.abs(diff),overdue:true};
+  if (diff <= 30) return {type:'red',days:diff};
+  if (diff <= 60) return {type:'amber',days:diff};
+  return {type:'green',days:diff};
 }
 function fmt(s) {
   if (!s) return '—';
-  return new Date(s).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
 }
 function fmtShort(s) {
   if (!s) return '—';
-  return new Date(s).toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+  return new Date(s).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
 }
 function addYear(s) {
   if (!s) return null;
-  const d = new Date(s); d.setFullYear(d.getFullYear() + 1);
+  const d = new Date(s); d.setFullYear(d.getFullYear()+1);
   return d.toISOString().split('T')[0];
 }
 function daysLabel(s) {
-  if (s.type === 'overdue') return s.days + ' gün gecikti';
-  if (s.days !== null) return s.days + ' gün kaldı';
-  return '';
+  if (!s.days && s.days !== 0) return '';
+  if (s.overdue) return s.days+'g gecikti';
+  return s.days+'g kaldı';
 }
-function pillCls(t) { return t === 'overdue' ? 'overdue' : t; }
-function dotStatus(dl) {
-  if (dl.some(d => d.status.type === 'overdue' || d.status.type === 'danger')) return 'danger';
-  if (dl.some(d => d.status.type === 'warning')) return 'warning';
-  return 'ok';
+function dotColor(dl) {
+  if (!dl || !dl.length) return 'grey';
+  if (dl.some(d=>d.status&&(d.status.type==='red'))) return 'red';
+  if (dl.some(d=>d.status&&d.status.type==='amber')) return 'amber';
+  return 'green';
 }
 
-function buildDeadlines(p) {
-  const items = [];
-  const csNext = p.confirmation_statement?.next_due;
+// ── DEADLINES ──
+function buildDL(p) {
+  const cs = p.confirmation_statement?.next_due;
   const csLast = p.confirmation_statement?.last_made_up_to;
-  items.push({ id:'cs', type:'Confirmation Statement', label:'Son beyan tarihi', date:csNext, sub: csLast ? 'Son CS: '+fmt(csLast) : null, status: getStatus(csNext) });
-  const accNext = p.accounts?.next_due;
+  const acc = p.accounts?.next_due;
   const accEnd = p.accounts?.next_accounts?.period_end_on;
-  items.push({ id:'acc', type:'Accounts', label:'Hesap beyanı son tarihi', date:accNext, sub: accEnd ? 'Dönem sonu: '+fmt(accEnd) : null, status: getStatus(accNext) });
-  return items;
+  return [
+    {id:'cs',type:'Confirmation Statement',label:'Son beyan tarihi',date:cs,sub:csLast?'Son CS: '+fmt(csLast):null,status:getStatus(cs)},
+    {id:'acc',type:'Accounts',label:'Hesap beyanı son tarihi',date:acc,sub:accEnd?'Dönem sonu: '+fmt(accEnd):null,status:getStatus(acc)},
+  ];
 }
 function buildAll(dl) {
-  const next = dl.map(d => ({ ...d, id: d.id+'_next', date: addYear(d.date), status: getStatus(addYear(d.date)), sub:'Tahmini sonraki dönem', isNextYear:true }));
-  return [...dl, ...next];
+  return [...dl, ...dl.map(d=>({...d,id:d.id+'_nx',date:addYear(d.date),status:getStatus(addYear(d.date)),sub:'Tahmini sonraki dönem',isNext:true}))];
 }
 
-// ---- COMPANY GRID ----
-function renderGrid() {
-  const grid = document.getElementById('companyGrid');
-  const label = document.getElementById('gridLabel');
-  const keys = Object.keys(saved);
-  if (!keys.length) { grid.innerHTML = '<div class="empty-state">Henüz şirket eklenmedi.<br>Yukarıdan kayıt numarası ile arayın.</div>'; label.style.display='none'; return; }
-  label.style.display='block';
+// ── VIEW SWITCH ──
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  event.target.classList.add('active');
+  if(v==='tracker'){renderTracker();renderCal();}
+  else{renderClients();}
+}
 
-  const dotOrder = { danger: 0, warning: 1, ok: 2 };
-  const sorted = keys.slice().sort((a, b) => {
-    const da = dotOrder[saved[a].dot] ?? 3, db = dotOrder[saved[b].dot] ?? 3;
-    if (da !== db) return da - db;
-    return (saved[a].nextDue || '9999').localeCompare(saved[b].nextDue || '9999');
+// ── SEARCH ──
+function handleSearch(q) {
+  searchQ = q.toLowerCase();
+  const activeView = document.querySelector('.view.active').id;
+  if(activeView==='view-clients') renderClients();
+  else renderTracker();
+}
+
+// ── NAV STATS ──
+function updateStats() {
+  let r=0,a=0,g=0;
+  Object.values(trackerData).forEach(c=>{
+    if(!c.dl) return;
+    const dc = dotColor(c.dl);
+    if(dc==='red') r++;
+    else if(dc==='amber') a++;
+    else if(dc==='green') g++;
+  });
+  document.getElementById('statRed').textContent = r;
+  document.getElementById('statAmber').textContent = a;
+  document.getElementById('statGreen').textContent = g;
+}
+
+// ─────────────────────────────────────────────
+// CLIENTS VIEW
+// ─────────────────────────────────────────────
+function renderClients() {
+  const grid = document.getElementById('clientsGrid');
+  let clients = CLIENTS_DATA;
+  if(searchQ) clients = clients.filter(c=>c.name.toLowerCase().includes(searchQ)||c.director.toLowerCase().includes(searchQ)||(c.companyNo||'').includes(searchQ));
+
+  if(!clients.length){grid.innerHTML='<div class="empty">Sonuç bulunamadı</div>';return;}
+
+  // Merge with tracker dot
+  const sorted = clients.slice().sort((a,b)=>{
+    const da = trackerData[a.companyNo.padStart(8,'0')];
+    const db = trackerData[b.companyNo.padStart(8,'0')];
+    const order = {red:0,amber:1,green:2,grey:3};
+    const oa = order[da?dotColor(da.dl):'grey']??3;
+    const ob = order[db?dotColor(db.dl):'grey']??3;
+    if(oa!==ob) return oa-ob;
+    const nd_a = da?.nextDue||'9999'; const nd_b = db?.nextDue||'9999';
+    return nd_a.localeCompare(nd_b);
   });
 
-  grid.innerHTML = sorted.map(num => {
-    const c = saved[num];
-    const dl = c.deadlines || [];
-    const cs = dl.find(d => d.id === 'cs');
-    const acc = dl.find(d => d.id === 'acc');
-    const csStatus = cs ? cs.status : { type: 'unknown' };
-    const accStatus = acc ? acc.status : { type: 'unknown' };
-    return `<div class="company-card c-${c.dot||'ok'}" onclick="openPopup('${num}')">
-      <button class="card-rm" onclick="event.stopPropagation();removeSaved('${num}')" title="Kaldır">✕</button>
+  grid.innerHTML = sorted.map(c=>{
+    const num = c.companyNo.padStart(8,'0');
+    const td = trackerData[num];
+    const dc = td ? dotColor(td.dl) : 'grey';
+    const dl = td?.dl || [];
+    const cs = dl.find(d=>d.id==='cs');
+    const acc = dl.find(d=>d.id==='acc');
+    const color = getColor(c.name);
+    const badgeMap = {red:'badge-red',amber:'badge-amber',green:'badge-green',grey:'badge-grey'};
+    const badgeText = {red:'⚠ Acil',amber:'Yaklaşıyor',green:'Tamam',grey:'Bilinmiyor'};
+    return `<div class="client-card c-${dc}" onclick="openClientPopup('${c.companyNo}')">
+      <div class="card-top">
+        <div class="card-avatar" style="background:${color}">${initials(c.name)}</div>
+        <span class="card-status-badge ${badgeMap[dc]}">${badgeText[dc]}</span>
+      </div>
       <div class="card-name">${c.name}</div>
-      <div class="card-num">${num}</div>
-      <div class="card-badges">
-        <div class="card-badge">
-          <span class="badge-label">CS</span>
-          <span class="badge-val ${csStatus.type}">${cs && cs.date ? fmtShort(cs.date) : '—'}</span>
+      <div class="card-director">${c.director}</div>
+      <div class="card-dates">
+        <div class="card-date-row">
+          <span class="date-label">CS</span>
+          <span class="date-val ${cs?cs.status.type:'grey'}">${cs&&cs.date?fmtShort(cs.date):'—'}</span>
         </div>
-        <div class="card-badge">
-          <span class="badge-label">Accounts</span>
-          <span class="badge-val ${accStatus.type}">${acc && acc.date ? fmtShort(acc.date) : '—'}</span>
+        <div class="card-date-row">
+          <span class="date-label">Accounts</span>
+          <span class="date-val ${acc?acc.status.type:'grey'}">${acc&&acc.date?fmtShort(acc.date):'—'}</span>
         </div>
       </div>
     </div>`;
   }).join('');
-
-  renderCalendar();
 }
 
-// ---- POPUP ----
-function openPopup(num) {
-  const c = saved[num];
-  if (!c || !c.profile) return;
-  const p = c.profile;
-  const dl = buildDeadlines(p);
-  const all = buildAll(dl);
-  const overdue = all.filter(d => d.status.type === 'overdue' && !doneItems[num+'_'+d.id]);
-  const statusLabel = p.company_status === 'active' ? '<span class="status-active">Aktif</span>' : '<span class="status-dissolved">'+(p.company_status||'—')+'</span>';
+// ─────────────────────────────────────────────
+// TRACKER VIEW
+// ─────────────────────────────────────────────
+function renderTracker() {
+  const grid = document.getElementById('trackerGrid');
+  let keys = Object.keys(trackerData);
+  if(searchQ) keys = keys.filter(k=>{
+    const c = trackerData[k];
+    return (c.name||'').toLowerCase().includes(searchQ)||(k).includes(searchQ);
+  });
 
-  let html = `<div class="popup-co-name">${p.company_name}</div>
-    <div class="popup-meta">
-      <span>No: <strong>${p.company_number}</strong></span>
-      <span>Durum: ${statusLabel}</span>
-      <span>Tür: ${p.type||'—'}</span>
-      ${p.date_of_creation ? '<span>Kuruluş: '+fmt(p.date_of_creation)+'</span>' : ''}
+  if(!keys.length){grid.innerHTML='<div class="empty">Henüz şirket eklenmedi</div>';return;}
+
+  const order={red:0,amber:1,green:2};
+  keys.sort((a,b)=>{
+    const oa=order[dotColor(trackerData[a].dl)]??3, ob=order[dotColor(trackerData[b].dl)]??3;
+    if(oa!==ob) return oa-ob;
+    return (trackerData[a].nextDue||'9999').localeCompare(trackerData[b].nextDue||'9999');
+  });
+
+  grid.innerHTML = keys.map(num=>{
+    const c = trackerData[num];
+    const dc = dotColor(c.dl);
+    const dl = c.dl||[];
+    const cs = dl.find(d=>d.id==='cs');
+    const acc = dl.find(d=>d.id==='acc');
+    return `<div class="tracker-card c-${dc}" onclick="openTrackerPopup('${num}')">
+      <div class="tc-name">${c.name}</div>
+      <div class="tc-num">${num}</div>
+      <div class="tc-rows">
+        <div class="tc-row"><span class="tc-lbl">CS</span><span class="tc-val ${cs?cs.status.type:'grey'}">${cs&&cs.date?fmtShort(cs.date):'—'}</span></div>
+        <div class="tc-row"><span class="tc-lbl">Accounts</span><span class="tc-val ${acc?acc.status.type:'grey'}">${acc&&acc.date?fmtShort(acc.date):'—'}</span></div>
+      </div>
     </div>`;
+  }).join('');
+  updateStats();
+}
 
-  if (overdue.length > 0) html += `<div class="overdue-banner">⚠ ${overdue.length} vadesi geçmiş yükümlülük!</div>`;
-  html += '<div class="sec-label" style="margin-bottom:8px">Yükümlülükler</div><div class="dl-list">';
-  html += renderDLCards(all, num, showDoneMap[num] || false);
-  html += '</div>';
-  document.getElementById('popupContent').innerHTML = html;
+// ─────────────────────────────────────────────
+// ADD COMPANY
+// ─────────────────────────────────────────────
+function saveApiKey() {
+  const v = document.getElementById('apiKeyInput').value.trim();
+  if(!v) return;
+  apiKey=v; localStorage.setItem('ch_api_key',apiKey);
+  renderApiStatus();
+}
+function changeKey() {
+  document.getElementById('apiOkBox').classList.add('hidden');
+  document.getElementById('apiSetupBox').classList.remove('hidden');
+  document.getElementById('apiKeyInput').value=apiKey;
+}
+function renderApiStatus() {
+  if(apiKey){document.getElementById('apiSetupBox').classList.add('hidden');document.getElementById('apiOkBox').classList.remove('hidden');}
+  else{document.getElementById('apiSetupBox').classList.remove('hidden');document.getElementById('apiOkBox').classList.add('hidden');}
+}
+
+async function addCompany() {
+  if(!apiKey){alert('Önce API key girin!');return;}
+  const raw = document.getElementById('regInput').value.trim();
+  if(!raw) return;
+  const num = raw.replace(/[^A-Za-z0-9]/g,'').toUpperCase().padStart(8,'0');
+  document.getElementById('addBtn').disabled=true;
+  document.getElementById('addStatus').innerHTML='<div class="loading"><div class="spinner"></div>Sorgulanıyor...</div>';
+  try {
+    const r = await fetch(API_BASE+'/company/'+num+'?apikey='+encodeURIComponent(apiKey));
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const profile = await r.json();
+    const dl = buildDL(profile);
+    const nextDue = dl.map(d=>d.date).filter(Boolean).sort()[0]||'9999';
+    trackerData[num]={name:profile.company_name,profile,dl,nextDue};
+    persist();
+    document.getElementById('addStatus').innerHTML='';
+    document.getElementById('regInput').value='';
+    renderTracker();renderCal();
+  } catch(e) {
+    document.getElementById('addStatus').innerHTML='<div class="err-msg">Hata: '+e.message+'</div>';
+  }
+  document.getElementById('addBtn').disabled=false;
+}
+
+document.getElementById('regInput').addEventListener('keydown',e=>{if(e.key==='Enter')addCompany();});
+document.getElementById('regInput').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();});
+
+// ─────────────────────────────────────────────
+// POPUP
+// ─────────────────────────────────────────────
+function openClientPopup(companyNo) {
+  const client = getClientByNo(companyNo);
+  if(!client) return;
+  const num = companyNo.padStart(8,'0');
+  const td = trackerData[num];
+  currentPopupNum = num;
+
+  document.getElementById('popupName').textContent = client.name;
+  document.getElementById('popupDirector').textContent = client.director + (td?.profile?.company_status?' · '+td.profile.company_status:'');
+
+  const tabs = ['📋 Bilgiler', td?'📅 Compliance':''];
+  document.getElementById('popupTabs').innerHTML = tabs.filter(Boolean).map((t,i)=>
+    `<div class="popup-tab${i===0?' active':''}" onclick="switchPopupTab(${i})">${t}</div>`
+  ).join('');
+
+  let infoHtml = '<div class="popup-tab-content active" id="ptab-0"><div class="info-grid">';
+  const fields = [
+    ['Şirket No',client.companyNo],['UTR No',client.utr],
+    ['Personal UTR',client.personalUtr],['NINO',client.nino],
+    ['Auth Code',client.authCode],['PAYE Ref',client.payeRef],
+    ['Account Office Ref',client.accountOfficeRef,'full'],
+    ['Gateway ID',client.gateway,'full'],
+    ['Email',client.email,'full'],
+    ['Portal Şifre',client.password],
+  ];
+  fields.forEach(([label,val,full])=>{
+    const cls = full?'info-item full':'info-item';
+    const display = val ? `<span>${val}</span><button class="copy-btn" onclick="copyVal('${val.replace(/'/g,"\\'")}',this)" title="Kopyala">📋</button>` : `<span class="empty-val">—</span>`;
+    infoHtml+=`<div class="${cls}"><div class="info-label">${label}</div><div class="info-value">${display}</div></div>`;
+  });
+  infoHtml+='</div></div>';
+
+  if(td) {
+    const all = buildAll(td.dl);
+    infoHtml += '<div class="popup-tab-content" id="ptab-1">'+renderDLCards(all, num)+'</div>';
+  }
+
+  document.getElementById('popupBody').innerHTML = infoHtml;
   document.getElementById('overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow='hidden';
 }
 
-function closePopup(e) {
-  if (e.target === document.getElementById('overlay')) closePopupDirect();
-}
-function closePopupDirect() {
-  document.getElementById('overlay').classList.remove('open');
-  document.body.style.overflow = '';
+function openTrackerPopup(num) {
+  const td = trackerData[num];
+  if(!td) return;
+  const client = getClientByNo(num);
+  currentPopupNum = num;
+
+  document.getElementById('popupName').textContent = td.name;
+  document.getElementById('popupDirector').textContent = (client?.director||'') + (td.profile?.company_status?' · '+td.profile.company_status:'');
+
+  const hasCl = !!client;
+  document.getElementById('popupTabs').innerHTML = [
+    '📅 Compliance', hasCl?'📋 Bilgiler':''
+  ].filter(Boolean).map((t,i)=>
+    `<div class="popup-tab${i===0?' active':''}" onclick="switchPopupTab(${i})">${t}</div>`
+  ).join('');
+
+  const all = buildAll(td.dl);
+  const overdue = all.filter(d=>d.status.type==='red'&&!doneItems[num+'_'+d.id]);
+  let html = '<div class="popup-tab-content active" id="ptab-0">';
+  if(overdue.length) html+=`<div class="overdue-banner">⚠ ${overdue.length} vadesi geçmiş yükümlülük!</div>`;
+  html += renderDLCards(all,num)+'</div>';
+
+  if(hasCl) {
+    html += '<div class="popup-tab-content" id="ptab-1"><div class="info-grid">';
+    const fields=[['Şirket No',client.companyNo],['UTR No',client.utr],['Personal UTR',client.personalUtr],['NINO',client.nino],['Auth Code',client.authCode],['PAYE Ref',client.payeRef],['Account Office Ref',client.accountOfficeRef,'full'],['Gateway ID',client.gateway,'full'],['Email',client.email,'full'],['Portal Şifre',client.password]];
+    fields.forEach(([label,val,full])=>{
+      const cls=full?'info-item full':'info-item';
+      const display=val?`<span>${val}</span><button class="copy-btn" onclick="copyVal('${val.replace(/'/g,"\\'")}',this)" title="Kopyala">📋</button>`:`<span class="empty-val">—</span>`;
+      html+=`<div class="${cls}"><div class="info-label">${label}</div><div class="info-value">${display}</div></div>`;
+    });
+    html+='</div></div>';
+  }
+
+  document.getElementById('popupBody').innerHTML=html;
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
 }
 
-function renderDLCards(all, num, showDone) {
-  const pending = all.filter(d => !doneItems[num+'_'+d.id]);
-  const done = all.filter(d => doneItems[num+'_'+d.id]);
-  let html = '';
-  pending.forEach(dl => {
-    const s = dl.status;
-    const cc = (s.type==='overdue'||s.type==='danger') ? 'danger' : s.type==='warning' ? 'warning' : 'ok';
-    html += `<div class="dl-card ${cc}">
-      <input type="checkbox" onchange="markDone('${num}','${dl.id}',this.checked)" />
+function switchPopupTab(i) {
+  document.querySelectorAll('.popup-tab').forEach((t,j)=>t.classList.toggle('active',i===j));
+  document.querySelectorAll('.popup-tab-content').forEach((t,j)=>t.classList.toggle('active',i===j));
+}
+
+function renderDLCards(all, num) {
+  const pending = all.filter(d=>!doneItems[num+'_'+d.id]);
+  const done = all.filter(d=>doneItems[num+'_'+d.id]);
+  let html='';
+  pending.forEach(dl=>{
+    const s=dl.status;
+    const cc=s.type==='red'?'danger':s.type==='amber'?'warning':'ok';
+    html+=`<div class="dl-card ${cc}">
+      <input type="checkbox" onchange="markDone('${num}','${dl.id}',this.checked)">
       <div class="dl-body">
-        <div class="dl-top">
-          <span class="dl-badge">${dl.type}</span>
-          ${dl.isNextYear ? '<span class="dl-next">sonraki yıl tahmini</span>' : ''}
-        </div>
+        <div class="dl-type">${dl.type}${dl.isNext?' · sonraki yıl':''}</div>
         <div class="dl-label">${dl.label}</div>
-        ${dl.sub ? '<div class="dl-sub">'+dl.sub+'</div>' : ''}
+        ${dl.sub?'<div class="dl-sub">'+dl.sub+'</div>':''}
       </div>
       <div class="dl-right">
-        ${daysLabel(s) ? '<span class="pill '+pillCls(s.type)+'">'+daysLabel(s)+'</span>' : ''}
-        <div class="dl-date ${cc}">${fmt(dl.date)}</div>
+        ${daysLabel(s)?'<span class="pill '+s.type+(s.overdue?' overdue':'')+'">'+daysLabel(s)+'</span>':''}
+        <div class="dl-date ${s.type}">${fmt(dl.date)}</div>
       </div>
     </div>`;
   });
-  if (done.length > 0) {
-    html += `<button class="done-toggle" onclick="toggleDone('${num}')">${showDone?'▲':'▼'} Tamamlananlar (${done.length})</button>
-    <div style="display:${showDone?'flex':'none'};flex-direction:column;gap:6px;">`;
-    done.forEach(dl => {
-      html += `<div class="dl-card done">
-        <input type="checkbox" checked onchange="markDone('${num}','${dl.id}',this.checked)" />
-        <div class="dl-body">
-          <div class="dl-top"><span class="dl-badge">${dl.type}</span></div>
-          <div class="dl-label" style="text-decoration:line-through;color:var(--text3)">${dl.label}</div>
-        </div>
-        <div class="dl-right">
-          <span class="pill done-lbl">Tamamlandı</span>
-          <div class="dl-date done-d">${fmt(dl.date)}</div>
-        </div>
+  if(done.length){
+    html+=`<button class="done-toggle" onclick="toggleDone('${num}')">${showDone[num]?'▲':'▼'} Tamamlananlar (${done.length})</button>
+    <div style="display:${showDone[num]?'block':'none'}">`;
+    done.forEach(dl=>{
+      html+=`<div class="dl-card done-card">
+        <input type="checkbox" checked onchange="markDone('${num}','${dl.id}',this.checked)">
+        <div class="dl-body"><div class="dl-type">${dl.type}</div><div class="dl-label" style="text-decoration:line-through;color:var(--text3)">${dl.label}</div></div>
+        <div class="dl-right"><span class="pill green">✓ Tamam</span><div class="dl-date done">${fmt(dl.date)}</div></div>
       </div>`;
     });
-    html += '</div>';
+    html+='</div>';
   }
   return html;
 }
 
-function markDone(num, id, checked) {
-  const key = num+'_'+id;
-  if (checked) doneItems[key] = true; else delete doneItems[key];
+function markDone(num,id,checked) {
+  const key=num+'_'+id;
+  if(checked) doneItems[key]=true; else delete doneItems[key];
   persist();
-  // popup'u yenile
-  const c = saved[num];
-  if (c && c.profile) {
-    const dl = buildDeadlines(c.profile);
-    const all = buildAll(dl);
-    const dot = dotStatus(all.filter(d => !doneItems[num+'_'+d.id]));
-    saved[num].dot = dot;
+  if(trackerData[num]) {
+    const all=buildAll(trackerData[num].dl);
+    trackerData[num].dotColor=dotColor(all.filter(d=>!doneItems[num+'_'+d.id]));
     persist();
   }
-  openPopup(num);
-  renderGrid();
+  // reopen popup
+  if(trackerData[num]) openTrackerPopup(num);
+  else if(getClientByNo(num)) openClientPopup(num);
+  renderTracker();renderClients();renderCal();
 }
 
-function toggleDone(num) {
-  showDoneMap[num] = !showDoneMap[num];
-  openPopup(num);
+function toggleDone(num){showDone[num]=!showDone[num];if(trackerData[num])openTrackerPopup(num);else openClientPopup(num);}
+
+function copyVal(val,btn){
+  navigator.clipboard.writeText(val).then(()=>{
+    btn.textContent='✅'; setTimeout(()=>btn.textContent='📋',1500);
+  });
 }
 
-// ---- SEARCH ----
-async function searchCompany() {
-  if (!apiKey) { alert('Önce API key girin!'); return; }
-  const raw = document.getElementById('regInput').value.trim();
-  if (!raw) return;
-  const num = raw.replace(/[^A-Za-z0-9]/g,'').toUpperCase().padStart(8,'0');
-  document.getElementById('searchBtn').disabled = true;
-  document.getElementById('searchStatus').innerHTML = '<div class="loading"><div class="spinner"></div>Sorgulanıyor...</div>';
-  try {
-    const r = await fetch(API_BASE + '/company/' + num + '?apikey=' + encodeURIComponent(apiKey));
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const profile = await r.json();
-    const dl = buildDeadlines(profile);
-    const all = buildAll(dl);
-    const nextDue = dl.map(d => d.date).filter(Boolean).sort()[0] || '9999-99-99';
-    const dot = dotStatus(all);
-    saved[num] = { name: profile.company_name, dot, nextDue, profile, deadlines: dl };
-    persist();
-    document.getElementById('searchStatus').innerHTML = '';
-    document.getElementById('regInput').value = '';
-    renderGrid();
-  } catch(e) {
-    let msg = 'Hata: ' + e.message;
-    if (e.message.includes('404')) msg = 'Şirket bulunamadı.';
-    document.getElementById('searchStatus').innerHTML = '<div class="error-msg">'+msg+'</div>';
-  }
-  document.getElementById('searchBtn').disabled = false;
-}
+function closePopup(){document.getElementById('overlay').classList.remove('open');document.body.style.overflow='';}
+function handleOverlayClick(e){if(e.target===document.getElementById('overlay'))closePopup();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup();});
 
-function removeSaved(num) {
-  delete saved[num];
-  persist();
-  renderGrid();
-  renderCalendar();
-}
+// ─────────────────────────────────────────────
+// CALENDAR
+// ─────────────────────────────────────────────
+function calPrev(){calM--;if(calM<0){calM=11;calY--;}renderCal();}
+function calNext(){calM++;if(calM>11){calM=0;calY++;}renderCal();}
+function calNow(){calY=today.getFullYear();calM=today.getMonth();renderCal();}
 
-// ---- CALENDAR ----
-function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
-function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
-function calToday() { calYear=today.getFullYear(); calMonth=today.getMonth(); renderCalendar(); }
-
-function allEvents() {
-  const events = [];
-  Object.keys(saved).forEach(num => {
-    const c = saved[num];
-    const dl = c.deadlines || [];
-    dl.forEach(d => {
-      if (!d.date) return;
-      events.push({ num, name: c.name, type: d.type, date: d.date, status: d.status });
+function allEvents(){
+  const evs=[];
+  Object.entries(trackerData).forEach(([num,c])=>{
+    if(!c.dl) return;
+    c.dl.forEach(d=>{
+      if(!d.date) return;
+      evs.push({num,name:c.name,type:d.type,date:d.date,status:d.status});
     });
   });
-  return events;
+  return evs;
 }
 
-function renderCalendar() {
-  const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-  document.getElementById('calMonthLabel').textContent = months[calMonth] + ' ' + calYear;
+function renderCal(){
+  const months=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  document.getElementById('calLabel').textContent=months[calM]+' '+calY;
+  const evs=allEvents();
+  const byDate={};
+  evs.forEach(e=>{if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
 
-  const events = allEvents();
-  const eventsByDate = {};
-  events.forEach(e => {
-    const k = e.date;
-    if (!eventsByDate[k]) eventsByDate[k] = [];
-    eventsByDate[k].push(e);
-  });
+  const first=new Date(calY,calM,1).getDay();
+  const days=new Date(calY,calM+1,0).getDate();
+  const offset=(first+6)%7;
 
-  const firstDay = new Date(calYear, calMonth, 1).getDay();
-  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
-  const startOffset = (firstDay + 6) % 7; // Mon start
-
-  let html = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => `<div class="cal-dow">${d}</div>`).join('');
-
-  for (let i = 0; i < startOffset; i++) {
-    const prevDay = new Date(calYear, calMonth, -startOffset+i+1).getDate();
-    html += `<div class="cal-day other-month">${prevDay}</div>`;
+  let html=['Mo','Tu','We','Th','Fr','Sa','Su'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<offset;i++){
+    const pd=new Date(calY,calM,-offset+i+1).getDate();
+    html+=`<div class="cal-day other">${pd}</div>`;
   }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
-    const evs = eventsByDate[dateStr] || [];
-    const dotCls = evs.length ? (evs.some(e=>e.status.type==='overdue'||e.status.type==='danger')?'danger':evs.some(e=>e.status.type==='warning')?'warning':'ok') : '';
-    html += `<div class="cal-day${isToday?' today':''}${evs.length?' has-event':''}" ${evs.length?'onclick="showCalDay(\''+dateStr+'\')"':''} title="${evs.map(e=>e.name).join(', ')}">
-      ${d}
-      ${dotCls ? '<div class="event-dot '+dotCls+'"></div>' : ''}
-    </div>`;
+  for(let d=1;d<=days;d++){
+    const ds=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isT=today.getFullYear()===calY&&today.getMonth()===calM&&today.getDate()===d;
+    const de=byDate[ds]||[];
+    const dc=de.length?(de.some(e=>e.status.type==='red')?'red':de.some(e=>e.status.type==='amber')?'amber':'green'):'';
+    html+=`<div class="cal-day${isT?' today':''}${de.length?' has-ev':''}" ${de.length?'onclick="calDayClick(\''+ds+'\')"':''}>${d}${dc?'<div class="ev-dot '+dc+'"></div>':''}</div>`;
   }
+  const rem=(7-(offset+days)%7)%7;
+  for(let i=1;i<=rem;i++) html+=`<div class="cal-day other">${i}</div>`;
+  document.getElementById('calGrid').innerHTML=html;
 
-  const remaining = (7 - (startOffset + daysInMonth) % 7) % 7;
-  for (let i = 1; i <= remaining; i++) html += `<div class="cal-day other-month">${i}</div>`;
-
-  document.getElementById('calGrid').innerHTML = html;
-
-  // Bu ay içindeki etkinlikler
-  const monthStart = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-01';
-  const monthEnd = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
-  const monthEvents = events.filter(e => e.date >= monthStart && e.date <= monthEnd)
-    .sort((a,b) => a.date.localeCompare(b.date));
-
-  if (!monthEvents.length) {
-    document.getElementById('calMonthEvents').innerHTML = '<div style="font-size:12px;color:var(--text3);">Bu ay son tarihi yok.</div>';
-    return;
-  }
-
-  document.getElementById('calMonthEvents').innerHTML = monthEvents.map(e => {
-    const sc = (e.status.type==='overdue'||e.status.type==='danger')?'danger':e.status.type==='warning'?'warning':'ok';
-    return `<div class="cal-event-item ${sc}" onclick="openPopup('${e.num}')">
-      <div class="cal-event-name">${e.name}</div>
-      <div class="cal-event-type">${e.type}</div>
-      <div class="cal-event-date" style="color:var(--${sc==='danger'?'red':sc==='warning'?'amber':'green'})">${fmt(e.date)}</div>
+  const ms=calY+'-'+String(calM+1).padStart(2,'0')+'-01';
+  const me=calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(days).padStart(2,'0');
+  const mEvs=evs.filter(e=>e.date>=ms&&e.date<=me).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!mEvs.length){document.getElementById('calEvents').innerHTML='<div style="font-size:12px;color:var(--text3)">Bu ay son tarihi yok</div>';return;}
+  document.getElementById('calEvents').innerHTML=mEvs.map(e=>{
+    const sc=e.status.type==='red'?'red':e.status.type==='amber'?'amber':'green';
+    return `<div class="cal-ev ${sc}" onclick="openTrackerPopup('${e.num}')">
+      <div class="cal-ev-name">${e.name}</div>
+      <div class="cal-ev-type">${e.type}</div>
+      <div class="cal-ev-date ${sc}">${fmt(e.date)}</div>
     </div>`;
   }).join('');
 }
 
-function showCalDay(dateStr) {
-  const events = allEvents().filter(e => e.date === dateStr);
-  if (!events.length) return;
-  // Birden fazlaysa ilkini aç, ya da hepsini popup'ta göster
-  if (events.length === 1) { openPopup(events[0].num); return; }
-  let html = `<div class="popup-co-name">${fmt(dateStr)} — Son Tarihler</div><div style="margin-top:1rem;display:flex;flex-direction:column;gap:8px;">`;
-  events.forEach(e => {
-    const sc = (e.status.type==='overdue'||e.status.type==='danger')?'danger':e.status.type==='warning'?'warning':'ok';
-    html += `<div class="cal-event-item ${sc}" onclick="closePopupDirect();openPopup('${e.num}')">
-      <div class="cal-event-name">${e.name}</div>
-      <div class="cal-event-type">${e.type}</div>
-    </div>`;
-  });
-  html += '</div>';
-  document.getElementById('popupContent').innerHTML = html;
+function calDayClick(ds){
+  const evs=allEvents().filter(e=>e.date===ds);
+  if(!evs.length) return;
+  if(evs.length===1){openTrackerPopup(evs[0].num);return;}
+  // multi
+  document.getElementById('popupName').textContent=fmt(ds)+' — Son Tarihler';
+  document.getElementById('popupDirector').textContent='';
+  document.getElementById('popupTabs').innerHTML='';
+  document.getElementById('popupBody').innerHTML='<div style="display:flex;flex-direction:column;gap:8px;padding-top:8px">'+evs.map(e=>{
+    const sc=e.status.type==='red'?'red':e.status.type==='amber'?'amber':'green';
+    return `<div class="cal-ev ${sc}" onclick="closePopup();openTrackerPopup('${e.num}')"><div class="cal-ev-name">${e.name}</div><div class="cal-ev-type">${e.type}</div></div>`;
+  }).join('')+'</div>';
   document.getElementById('overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow='hidden';
 }
 
-document.getElementById('regInput').addEventListener('keydown', e => { if(e.key==='Enter') searchCompany(); });
-document.getElementById('regInput').addEventListener('input', e => { e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(); });
-document.addEventListener('keydown', e => { if(e.key==='Escape') closePopupDirect(); });
-
-// Eski kayıtlarda profile yoksa yeniden yükle
-async function refreshMissingProfiles() {
-  const keys = Object.keys(saved);
-  for (const num of keys) {
-    if (!saved[num].profile && apiKey) {
-      try {
-        const r = await fetch(API_BASE + '/company/' + num + '?apikey=' + encodeURIComponent(apiKey));
-        if (r.ok) {
-          const profile = await r.json();
-          const dl = buildDeadlines(profile);
-          const all = buildAll(dl);
-          const nextDue = dl.map(d => d.date).filter(Boolean).sort()[0] || '9999-99-99';
-          saved[num] = { ...saved[num], profile, deadlines: dl, nextDue, dot: dotStatus(all) };
-        }
-      } catch(e) {}
+// ─────────────────────────────────────────────
+// INIT — eski tracker datasını migrate et
+// ─────────────────────────────────────────────
+function migrateOldData(){
+  // Eski format: ch_saved
+  const old = JSON.parse(localStorage.getItem('ch_saved')||'{}');
+  let migrated=0;
+  Object.entries(old).forEach(([num,c])=>{
+    if(!trackerData[num]&&c.profile){
+      const dl=buildDL(c.profile);
+      const nextDue=dl.map(d=>d.date).filter(Boolean).sort()[0]||'9999';
+      trackerData[num]={name:c.name,profile:c.profile,dl,nextDue};
+      migrated++;
     }
-  }
-  persist();
-  renderGrid();
+  });
+  if(migrated){persist();console.log('Migrated',migrated,'companies');}
 }
 
 renderApiStatus();
-renderGrid();
-renderCalendar();
-if (apiKey) refreshMissingProfiles();
+migrateOldData();
+renderClients();
+updateStats();
 </script>
 </body>
 </html>
