@@ -1,23 +1,13 @@
 import http.server
 import urllib.request
 import urllib.parse
+import urllib.error
 import json
 import os
-import sys
 import base64
 
-PORT = 8765
-KEY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".ch_apikey")
-
-def load_key():
-    if os.path.exists(KEY_FILE):
-        with open(KEY_FILE) as f:
-            return f.read().strip()
-    return ""
-
-def save_key(k):
-    with open(KEY_FILE, "w") as f:
-        f.write(k)
+PORT = int(os.environ.get("PORT", 8765))
+CH_API_KEY = os.environ.get("CH_API_KEY", "")
 
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -40,27 +30,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     content = f.read()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
                 self.end_headers()
                 self.wfile.write(content)
-            except:
-                self.send_error(404)
-            return
-
-        if parsed.path == "/save-key":
-            key = params.get("key", [""])[0]
-            if key:
-                save_key(key)
-            self.send_response(200)
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(b"ok")
+            except Exception as e:
+                self.send_error(404, str(e))
             return
 
         if parsed.path.startswith("/api/"):
             ch_path = parsed.path[4:]
-            api_key = params.get("apikey", [""])[0] or load_key()
-            
-            # apikey parametresini CH'ye gönderme
+            api_key = params.get("apikey", [""])[0] or CH_API_KEY
+
             ch_params = {k: v[0] for k, v in params.items() if k != "apikey"}
             url = "https://api.company-information.service.gov.uk" + ch_path
             if ch_params:
@@ -77,6 +57,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Content-Length", str(len(data)))
                 self.end_headers()
                 self.wfile.write(data)
             except urllib.error.HTTPError as e:
@@ -92,21 +73,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_error(404)
 
 if __name__ == "__main__":
-    server = http.server.HTTPServer(("localhost", PORT), Handler)
-    print("\n" + "="*45)
-    print("  UK Compliance Tracker - Calistirildi!")
-    print("="*45)
-    print(f"\n  Tarayicinizda aciliyor...")
-    print(f"  http://localhost:{PORT}")
-    print(f"\n  Kapatmak icin bu pencereyi kapatin.\n")
-
-    import threading, webbrowser, time
-    def open_browser():
-        time.sleep(1.2)
-        webbrowser.open(f"http://localhost:{PORT}")
-    threading.Thread(target=open_browser, daemon=True).start()
-
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\nKapatildi.")
+    server = http.server.HTTPServer(("0.0.0.0", PORT), Handler)
+    print(f"Server running on port {PORT}", flush=True)
+    server.serve_forever()
