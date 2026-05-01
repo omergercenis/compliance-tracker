@@ -5,156 +5,207 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UK Compliance Tracker</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #ffffff; --bg2: #f5f5f4; --bg3: #fafaf9;
-    --text: #1c1917; --text2: #78716c; --text3: #a8a29e;
-    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.25);
-    --radius: 8px; --radius-lg: 12px;
-    --green-bg: #dcfce7; --green-text: #166534;
-    --amber-bg: #fef3c7; --amber-text: #92400e;
-    --red-bg: #fee2e2; --red-text: #991b1b; --red-dark: #7f1d1d;
-    --blue-bg: #eff6ff; --blue-text: #1e40af;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1c1917; --bg2: #292524; --bg3: #231f1e;
-      --text: #fafaf9; --text2: #a8a29e; --text3: #78716c;
-      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.22);
-      --green-bg: #052e16; --green-text: #86efac;
-      --amber-bg: #2d1b00; --amber-text: #fcd34d;
-      --red-bg: #2d0000; --red-text: #fca5a5; --red-dark: #fca5a5;
-      --blue-bg: #0f172a; --blue-text: #93c5fd;
-    }
-  }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
-  .container { max-width: 720px; margin: 0 auto; padding: 2rem 1rem; }
-  .app-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
-  .app-sub { font-size: 14px; color: var(--text2); margin-bottom: 1.75rem; }
-  .section-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-  .setup-box { background: var(--blue-bg); border: 1px solid #bfdbfe; border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; }
-  .setup-box.hidden { display: none; }
-  .setup-title { font-size: 14px; font-weight: 600; color: var(--blue-text); margin-bottom: 8px; }
-  .setup-steps { font-size: 13px; color: var(--blue-text); line-height: 1.8; margin-bottom: 12px; }
-  .setup-row { display: flex; gap: 8px; }
-  .setup-row input { flex: 1; padding: 0 10px; height: 34px; border: 1px solid #93c5fd; border-radius: var(--radius); font-size: 13px; background: var(--bg); color: var(--text); font-family: monospace; outline: none; }
-  .setup-row input:focus { border-color: #3b82f6; }
-  .setup-row button { padding: 0 14px; height: 34px; font-size: 13px; font-weight: 600; background: #2563eb; color: #fff; border: none; border-radius: var(--radius); cursor: pointer; }
-  .api-ok { display: flex; align-items: center; gap: 8px; background: var(--green-bg); border: 1px solid #86efac; border-radius: var(--radius-lg); padding: 10px 14px; margin-bottom: 1.5rem; }
-  .api-ok.hidden { display: none; }
-  .api-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
-  .api-ok span { font-size: 13px; color: var(--green-text); font-weight: 500; }
-  .api-change { background: none; border: none; color: #2563eb; font-size: 12px; cursor: pointer; margin-left: 6px; }
-  .search-row { display: flex; gap: 10px; margin-bottom: 1.5rem; }
-  .search-row input { flex: 1; padding: 0 12px; height: 38px; border: 1px solid var(--border2); border-radius: var(--radius); font-size: 15px; background: var(--bg); color: var(--text); letter-spacing: 0.05em; text-transform: uppercase; outline: none; }
-  .search-row input::placeholder { text-transform: none; letter-spacing: normal; color: var(--text3); }
-  .search-row button { padding: 0 20px; height: 38px; font-size: 14px; font-weight: 600; background: #111827; color: #fff; border: none; border-radius: var(--radius); cursor: pointer; }
-  .search-row button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .company-header { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
-  .company-name { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-  .company-meta { display: flex; gap: 14px; flex-wrap: wrap; }
-  .company-meta span { font-size: 13px; color: var(--text2); }
-  .status-active { color: #16a34a; font-weight: 600; }
-  .status-dissolved { color: #dc2626; font-weight: 600; }
-  .deadlines-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
-  .dl-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-lg); border: 1px solid; }
-  .dl-card.ok { background: var(--bg); border-color: var(--border); }
-  .dl-card.warning { background: var(--amber-bg); border-color: #f59e0b; }
-  .dl-card.danger { background: var(--red-bg); border-color: #ef4444; }
-  .dl-card.done { background: var(--bg2); border-color: var(--border); opacity: 0.55; }
-  .dl-card input[type=checkbox] { width: 18px; height: 18px; accent-color: #16a34a; cursor: pointer; flex-shrink: 0; }
-  .card-body { flex: 1; min-width: 0; }
-  .card-top { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; flex-wrap: wrap; }
-  .badge { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; background: var(--bg2); color: var(--text2); }
-  .next-note { font-size: 11px; color: var(--text3); font-style: italic; }
-  .card-label { font-size: 14px; font-weight: 500; }
-  .card-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
-  .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  .pill { font-size: 11px; padding: 2px 9px; border-radius: 10px; white-space: nowrap; font-weight: 500; }
-  .pill.ok { background: var(--green-bg); color: var(--green-text); }
-  .pill.warning { background: var(--amber-bg); color: var(--amber-text); }
-  .pill.danger { background: var(--red-bg); color: var(--red-text); }
-  .pill.overdue { background: var(--red-bg); color: var(--red-dark); font-weight: 700; }
-  .pill.done-lbl { background: var(--green-bg); color: var(--green-text); }
-  .card-date { font-size: 14px; font-weight: 600; min-width: 105px; text-align: right; }
-  .card-date.ok { color: var(--text); }
-  .card-date.warning { color: #b45309; }
-  .card-date.danger { color: #dc2626; }
-  .card-date.done-d { text-decoration: line-through; color: var(--text3); }
-  .overdue-banner { background: var(--red-bg); border: 1px solid #ef4444; border-radius: var(--radius); padding: 10px 14px; margin-bottom: 1rem; font-size: 13px; color: var(--red-text); font-weight: 600; }
-  .done-toggle { background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 12px; font-size: 12px; color: var(--text2); cursor: pointer; margin-bottom: 8px; }
-  .done-toggle:hover { background: var(--bg2); }
-  .loading { display: flex; align-items: center; gap: 10px; padding: 16px 0; color: var(--text2); font-size: 14px; }
-  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .error-msg { background: var(--red-bg); border: 1px solid #ef4444; border-radius: var(--radius); padding: 12px 16px; color: var(--red-text); font-size: 14px; }
-  hr { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
-  .saved-section { margin-bottom: 1.5rem; }
-  .pinned-list { display: flex; flex-direction: column; gap: 5px; }
-  .pinned-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg); border-radius: var(--radius); cursor: pointer; border: 1px solid var(--border); }
-  .pinned-item:hover { background: var(--bg2); }
-  .pinned-name { font-size: 13px; font-weight: 500; }
-  .pinned-num { font-size: 11px; color: var(--text2); }
-  .pinned-right { display: flex; align-items: center; gap: 8px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; }
-  .dot.danger { background: #ef4444; }
-  .dot.warning { background: #f59e0b; }
-  .dot.ok { background: #22c55e; }
-  .rm-btn { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 14px; padding: 2px 5px; }
-  .rm-btn:hover { color: #dc2626; }
-  @media (prefers-color-scheme: dark) {
-    .dl-card.warning { background: #2a1e00; }
-    .dl-card.danger { background: #2d0000; }
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f4;--bg3:#fafaf9;--text:#1c1917;--text2:#78716c;--text3:#a8a29e;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.2);--radius:10px;--radius-lg:14px;
+  --green:#16a34a;--green-bg:#dcfce7;--green-light:#f0fdf4;
+  --amber:#b45309;--amber-bg:#fef3c7;--amber-light:#fffbeb;
+  --red:#dc2626;--red-bg:#fee2e2;--red-light:#fff5f5;
+  --blue:#2563eb;--blue-bg:#eff6ff;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);color:var(--text);min-height:100vh}
+/* LAYOUT */
+.app{display:grid;grid-template-columns:1fr 320px;grid-template-rows:auto 1fr;min-height:100vh;gap:0}
+.main-col{padding:1.5rem;min-width:0}
+.cal-col{background:var(--bg);border-left:1px solid var(--border);padding:1.25rem;position:sticky;top:0;height:100vh;overflow-y:auto}
+@media(max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:auto auto}.cal-col{border-left:none;border-top:1px solid var(--border);height:auto;position:static}}
+/* HEADER */
+.app-title{font-size:20px;font-weight:700;margin-bottom:2px}
+.app-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
+/* API KEY */
+.setup-box{background:var(--blue-bg);border:1px solid #bfdbfe;border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem}
+.setup-box.hidden,.api-ok.hidden{display:none}
+.setup-title{font-size:13px;font-weight:600;color:#1e40af;margin-bottom:6px}
+.setup-steps{font-size:12px;color:#1e40af;line-height:1.7;margin-bottom:10px}
+.setup-row{display:flex;gap:6px}
+.setup-row input{flex:1;padding:0 8px;height:32px;border:1px solid #93c5fd;border-radius:var(--radius);font-size:12px;background:var(--bg);color:var(--text);font-family:monospace;outline:none}
+.setup-row button{padding:0 12px;height:32px;font-size:12px;font-weight:600;background:#2563eb;color:#fff;border:none;border-radius:var(--radius);cursor:pointer}
+.api-ok{display:flex;align-items:center;gap:8px;background:var(--green-bg);border:1px solid #86efac;border-radius:var(--radius);padding:8px 12px;margin-bottom:1rem}
+.api-ok span{font-size:13px;color:var(--green);font-weight:500}
+.api-change{background:none;border:none;color:var(--blue);font-size:12px;cursor:pointer;margin-left:4px}
+/* SEARCH */
+.search-row{display:flex;gap:8px;margin-bottom:1.25rem}
+.search-row input{flex:1;padding:0 12px;height:36px;border:1px solid var(--border2);border-radius:var(--radius);font-size:14px;background:var(--bg);color:var(--text);letter-spacing:.05em;text-transform:uppercase;outline:none}
+.search-row input::placeholder{text-transform:none;letter-spacing:normal;color:var(--text3)}
+.search-row input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.search-row button{padding:0 18px;height:36px;font-size:13px;font-weight:600;background:#111827;color:#fff;border:none;border-radius:var(--radius);cursor:pointer;white-space:nowrap}
+.search-row button:disabled{opacity:.4;cursor:not-allowed}
+/* SECTION LABEL */
+.sec-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+/* COMPANY GRID */
+.company-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:1.5rem}
+.company-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;cursor:pointer;transition:box-shadow .15s,transform .1s;position:relative;overflow:hidden}
+.company-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);transform:translateY(-1px)}
+.company-card.active{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.2)}
+.company-card.c-danger{border-left:3px solid var(--red)}
+.company-card.c-warning{border-left:3px solid #f59e0b}
+.company-card.c-ok{border-left:3px solid var(--green)}
+.card-name{font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.3}
+.card-num{font-size:11px;color:var(--text3);margin-bottom:10px}
+.card-badges{display:flex;flex-direction:column;gap:4px}
+.card-badge{display:flex;align-items:center;justify-content:space-between;font-size:11px}
+.badge-label{color:var(--text2)}
+.badge-val{font-weight:600;font-size:11px}
+.badge-val.ok{color:var(--green)}
+.badge-val.warning{color:var(--amber)}
+.badge-val.danger,.badge-val.overdue{color:var(--red)}
+.card-rm{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;opacity:0;transition:opacity .15s}
+.company-card:hover .card-rm{opacity:1}
+/* POPUP / MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.popup{background:var(--bg);border-radius:var(--radius-lg);padding:1.5rem;width:min(560px,95vw);max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.popup-close{position:absolute;top:12px;right:12px;background:var(--bg2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:14px;color:var(--text2);display:flex;align-items:center;justify-content:center}
+.popup-co-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.popup-meta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:1.25rem}
+.popup-meta span{font-size:12px;color:var(--text2)}
+.status-active{color:var(--green);font-weight:600}
+.status-dissolved{color:var(--red);font-weight:600}
+/* DEADLINE CARDS IN POPUP */
+.dl-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
+.dl-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);border:1px solid}
+.dl-card.ok{background:var(--bg2);border-color:var(--border)}
+.dl-card.warning{background:var(--amber-light);border-color:#f59e0b}
+.dl-card.danger{background:var(--red-light);border-color:#ef4444}
+.dl-card.done{background:var(--bg2);border-color:var(--border);opacity:.55}
+.dl-card input[type=checkbox]{width:16px;height:16px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+.dl-body{flex:1;min-width:0}
+.dl-top{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.dl-badge{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:8px;background:var(--bg2);color:var(--text2)}
+.dl-next{font-size:10px;color:var(--text3);font-style:italic}
+.dl-label{font-size:13px;font-weight:500}
+.dl-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.dl-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.pill{font-size:11px;padding:2px 8px;border-radius:8px;white-space:nowrap;font-weight:500}
+.pill.ok{background:var(--green-bg);color:#166534}
+.pill.warning{background:var(--amber-bg);color:var(--amber)}
+.pill.danger{background:var(--red-bg);color:var(--red)}
+.pill.overdue{background:var(--red-bg);color:#7f1d1d;font-weight:700}
+.pill.done-lbl{background:var(--green-bg);color:var(--green)}
+.dl-date{font-size:13px;font-weight:600;min-width:95px;text-align:right}
+.dl-date.ok{color:var(--text)}
+.dl-date.warning{color:var(--amber)}
+.dl-date.danger,.dl-date.overdue{color:var(--red)}
+.dl-date.done-d{text-decoration:line-through;color:var(--text3)}
+.done-toggle{background:none;border:1px solid var(--border);border-radius:var(--radius);padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:8px}
+.overdue-banner{background:var(--red-bg);border:1px solid #ef4444;border-radius:var(--radius);padding:8px 12px;margin-bottom:1rem;font-size:13px;color:#991b1b;font-weight:600}
+/* LOADING / ERROR */
+.loading{display:flex;align-items:center;gap:8px;padding:12px 0;color:var(--text2);font-size:13px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-msg{background:var(--red-bg);border:1px solid #ef4444;border-radius:var(--radius);padding:10px 14px;color:#991b1b;font-size:13px;margin-bottom:1rem}
+/* CALENDAR */
+.cal-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{background:none;border:1px solid var(--border);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:13px;color:var(--text2);display:flex;align-items:center;justify-content:center}
+.cal-nav button:hover{background:var(--bg2)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:1rem}
+.cal-dow{font-size:10px;font-weight:600;color:var(--text3);text-align:center;padding:4px 0}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:12px;cursor:default;position:relative;transition:background .1s}
+.cal-day.other-month{color:var(--text3)}
+.cal-day.today{background:#6366f1;color:#fff;font-weight:700}
+.cal-day.has-event{cursor:pointer}
+.cal-day.has-event:not(.today):hover{background:var(--bg2)}
+.event-dot{width:4px;height:4px;border-radius:50%;position:absolute;bottom:3px;left:50%;transform:translateX(-50%)}
+.event-dot.danger{background:var(--red)}
+.event-dot.warning{background:#f59e0b}
+.event-dot.ok{background:var(--green)}
+.cal-events{margin-top:.5rem}
+.cal-event-item{padding:8px 10px;border-radius:var(--radius);margin-bottom:6px;border-left:3px solid;cursor:pointer}
+.cal-event-item.danger{background:var(--red-light);border-color:var(--red)}
+.cal-event-item.warning{background:var(--amber-light);border-color:#f59e0b}
+.cal-event-item.ok{background:var(--green-light);border-color:var(--green)}
+.cal-event-name{font-size:12px;font-weight:600}
+.cal-event-type{font-size:11px;color:var(--text2)}
+.cal-event-date{font-size:11px;font-weight:500}
+.cal-month-events{margin-top:1rem}
+.cal-month-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+hr{border:none;border-top:1px solid var(--border);margin:1rem 0}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:14px}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="app-title">UK Compliance Tracker</div>
-  <div class="app-sub">Companies House — Confirmation Statement & Accounts takibi</div>
+<div class="app">
+  <!-- MAIN COLUMN -->
+  <div class="main-col">
+    <div class="app-title">UK Compliance Tracker</div>
+    <div class="app-sub">Companies House — müşteri portföy takibi</div>
 
-  <div id="setupBox" class="setup-box">
-    <div class="setup-title">🔑 API Key (sadece ilk seferde)</div>
-    <div class="setup-steps">
-      1. <a href="https://developer.company-information.service.gov.uk" target="_blank" style="color:#2563eb;">developer.company-information.service.gov.uk</a> adresine girin<br>
-      2. Hesabınıza giriş yapın → uygulamanızın API key'ini kopyalayın<br>
-      3. Aşağıya yapıştırın
+    <div id="setupBox" class="setup-box">
+      <div class="setup-title">🔑 API Key (sadece ilk seferde)</div>
+      <div class="setup-steps">
+        1. <a href="https://developer.company-information.service.gov.uk" target="_blank" style="color:#2563eb;">developer.company-information.service.gov.uk</a><br>
+        2. Hesabınıza giriş → API key kopyalayın
+      </div>
+      <div class="setup-row">
+        <input type="text" id="apiKeyInput" placeholder="API key yapıştırın..." />
+        <button onclick="saveApiKey()">Kaydet</button>
+      </div>
     </div>
-    <div class="setup-row">
-      <input type="text" id="apiKeyInput" placeholder="API key yapıştırın..." />
-      <button onclick="saveApiKey()">Kaydet</button>
+    <div id="apiOk" class="api-ok hidden">
+      <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0"></div>
+      <span>API key kayıtlı — hazır</span>
+      <button class="api-change" onclick="changeKey()">Değiştir</button>
+    </div>
+
+    <div class="sec-label">Şirket Ekle</div>
+    <div class="search-row">
+      <input type="text" id="regInput" placeholder="Kayıt numarası (örn: 12345678)" maxlength="10" />
+      <button id="searchBtn" onclick="searchCompany()">Sorgula & Ekle</button>
+    </div>
+
+    <div id="searchStatus"></div>
+
+    <div class="sec-label" id="gridLabel" style="display:none">Müşteri Portföyü</div>
+    <div class="company-grid" id="companyGrid"></div>
+  </div>
+
+  <!-- CALENDAR COLUMN -->
+  <div class="cal-col">
+    <div class="cal-title">
+      <span id="calMonthLabel"></span>
+      <div class="cal-nav">
+        <button onclick="calPrev()">‹</button>
+        <button onclick="calToday()">●</button>
+        <button onclick="calNext()">›</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-month-events">
+      <div class="cal-month-label">Bu Ay Yaklaşanlar</div>
+      <div id="calMonthEvents"></div>
     </div>
   </div>
-  <div id="apiOk" class="api-ok hidden">
-    <div class="api-dot"></div>
-    <span>API key kayıtlı — hazır</span>
-    <button class="api-change" onclick="changeKey()">Değiştir</button>
-  </div>
+</div>
 
-  <div id="savedSection" class="saved-section" style="display:none;">
-    <p class="section-label">Kayıtlı Şirketler</p>
-    <div id="pinnedList" class="pinned-list"></div>
-    <hr>
+<!-- POPUP OVERLAY -->
+<div class="overlay" id="overlay" onclick="closePopup(event)">
+  <div class="popup" id="popup">
+    <button class="popup-close" onclick="closePopupDirect()">✕</button>
+    <div id="popupContent"></div>
   </div>
-
-  <p class="section-label">Şirket Sorgula</p>
-  <div class="search-row">
-    <input type="text" id="regInput" placeholder="Kayıt numarası (örn: 12345678)" maxlength="10" />
-    <button id="searchBtn" onclick="searchCompany()">Sorgula</button>
-  </div>
-  <div id="output"></div>
 </div>
 
 <script>
-// Lokal proxy üzerinden çalışır — CORS sorunu yok
 const API_BASE = "/api";
-
 let apiKey = localStorage.getItem('ch_api_key') || '';
 let saved = JSON.parse(localStorage.getItem('ch_saved') || '{}');
 let doneItems = JSON.parse(localStorage.getItem('ch_done') || '{}');
 let showDoneMap = {};
-let currentProfile = null;
-let currentNum = null;
+let calYear, calMonth;
+const today = new Date(); today.setHours(0,0,0,0);
+calYear = today.getFullYear(); calMonth = today.getMonth();
 
 function persist() {
   localStorage.setItem('ch_saved', JSON.stringify(saved));
@@ -166,17 +217,13 @@ function saveApiKey() {
   if (!v) return;
   apiKey = v;
   localStorage.setItem('ch_api_key', apiKey);
-  // Sunucuya da kaydet
-  fetch('/save-key?key=' + encodeURIComponent(apiKey)).catch(()=>{});
   renderApiStatus();
 }
-
 function changeKey() {
   document.getElementById('apiOk').classList.add('hidden');
   document.getElementById('setupBox').classList.remove('hidden');
   document.getElementById('apiKeyInput').value = apiKey;
 }
-
 function renderApiStatus() {
   if (apiKey) {
     document.getElementById('setupBox').classList.add('hidden');
@@ -189,7 +236,6 @@ function renderApiStatus() {
 
 function getStatus(ds) {
   if (!ds) return { type: 'unknown', days: null };
-  const today = new Date(); today.setHours(0,0,0,0);
   const d = new Date(ds); d.setHours(0,0,0,0);
   const diff = Math.round((d - today) / 86400000);
   if (diff < 0) return { type: 'overdue', days: Math.abs(diff) };
@@ -197,26 +243,25 @@ function getStatus(ds) {
   if (diff <= 60) return { type: 'warning', days: diff };
   return { type: 'ok', days: diff };
 }
-
 function fmt(s) {
   if (!s) return '—';
   return new Date(s).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
-
+function fmtShort(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
+}
 function addYear(s) {
   if (!s) return null;
   const d = new Date(s); d.setFullYear(d.getFullYear() + 1);
   return d.toISOString().split('T')[0];
 }
-
 function daysLabel(s) {
   if (s.type === 'overdue') return s.days + ' gün gecikti';
   if (s.days !== null) return s.days + ' gün kaldı';
   return '';
 }
-
 function pillCls(t) { return t === 'overdue' ? 'overdue' : t; }
-
 function dotStatus(dl) {
   if (dl.some(d => d.status.type === 'overdue' || d.status.type === 'danger')) return 'danger';
   if (dl.some(d => d.status.type === 'warning')) return 'warning';
@@ -233,13 +278,89 @@ function buildDeadlines(p) {
   items.push({ id:'acc', type:'Accounts', label:'Hesap beyanı son tarihi', date:accNext, sub: accEnd ? 'Dönem sonu: '+fmt(accEnd) : null, status: getStatus(accNext) });
   return items;
 }
-
 function buildAll(dl) {
   const next = dl.map(d => ({ ...d, id: d.id+'_next', date: addYear(d.date), status: getStatus(addYear(d.date)), sub:'Tahmini sonraki dönem', isNextYear:true }));
   return [...dl, ...next];
 }
 
-function renderCards(all, num, showDone) {
+// ---- COMPANY GRID ----
+function renderGrid() {
+  const grid = document.getElementById('companyGrid');
+  const label = document.getElementById('gridLabel');
+  const keys = Object.keys(saved);
+  if (!keys.length) { grid.innerHTML = '<div class="empty-state">Henüz şirket eklenmedi.<br>Yukarıdan kayıt numarası ile arayın.</div>'; label.style.display='none'; return; }
+  label.style.display='block';
+
+  const dotOrder = { danger: 0, warning: 1, ok: 2 };
+  const sorted = keys.slice().sort((a, b) => {
+    const da = dotOrder[saved[a].dot] ?? 3, db = dotOrder[saved[b].dot] ?? 3;
+    if (da !== db) return da - db;
+    return (saved[a].nextDue || '9999').localeCompare(saved[b].nextDue || '9999');
+  });
+
+  grid.innerHTML = sorted.map(num => {
+    const c = saved[num];
+    const dl = c.deadlines || [];
+    const cs = dl.find(d => d.id === 'cs');
+    const acc = dl.find(d => d.id === 'acc');
+    const csStatus = cs ? cs.status : { type: 'unknown' };
+    const accStatus = acc ? acc.status : { type: 'unknown' };
+    return `<div class="company-card c-${c.dot||'ok'}" onclick="openPopup('${num}')">
+      <button class="card-rm" onclick="event.stopPropagation();removeSaved('${num}')" title="Kaldır">✕</button>
+      <div class="card-name">${c.name}</div>
+      <div class="card-num">${num}</div>
+      <div class="card-badges">
+        <div class="card-badge">
+          <span class="badge-label">CS</span>
+          <span class="badge-val ${csStatus.type}">${cs && cs.date ? fmtShort(cs.date) : '—'}</span>
+        </div>
+        <div class="card-badge">
+          <span class="badge-label">Accounts</span>
+          <span class="badge-val ${accStatus.type}">${acc && acc.date ? fmtShort(acc.date) : '—'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderCalendar();
+}
+
+// ---- POPUP ----
+function openPopup(num) {
+  const c = saved[num];
+  if (!c || !c.profile) return;
+  const p = c.profile;
+  const dl = buildDeadlines(p);
+  const all = buildAll(dl);
+  const overdue = all.filter(d => d.status.type === 'overdue' && !doneItems[num+'_'+d.id]);
+  const statusLabel = p.company_status === 'active' ? '<span class="status-active">Aktif</span>' : '<span class="status-dissolved">'+(p.company_status||'—')+'</span>';
+
+  let html = `<div class="popup-co-name">${p.company_name}</div>
+    <div class="popup-meta">
+      <span>No: <strong>${p.company_number}</strong></span>
+      <span>Durum: ${statusLabel}</span>
+      <span>Tür: ${p.type||'—'}</span>
+      ${p.date_of_creation ? '<span>Kuruluş: '+fmt(p.date_of_creation)+'</span>' : ''}
+    </div>`;
+
+  if (overdue.length > 0) html += `<div class="overdue-banner">⚠ ${overdue.length} vadesi geçmiş yükümlülük!</div>`;
+  html += '<div class="sec-label" style="margin-bottom:8px">Yükümlülükler</div><div class="dl-list">';
+  html += renderDLCards(all, num, showDoneMap[num] || false);
+  html += '</div>';
+  document.getElementById('popupContent').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePopup(e) {
+  if (e.target === document.getElementById('overlay')) closePopupDirect();
+}
+function closePopupDirect() {
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderDLCards(all, num, showDone) {
   const pending = all.filter(d => !doneItems[num+'_'+d.id]);
   const done = all.filter(d => doneItems[num+'_'+d.id]);
   let html = '';
@@ -248,41 +369,37 @@ function renderCards(all, num, showDone) {
     const cc = (s.type==='overdue'||s.type==='danger') ? 'danger' : s.type==='warning' ? 'warning' : 'ok';
     html += `<div class="dl-card ${cc}">
       <input type="checkbox" onchange="markDone('${num}','${dl.id}',this.checked)" />
-      <div class="card-body">
-        <div class="card-top">
-          <span class="badge">${dl.type}</span>
-          ${dl.isNextYear ? '<span class="next-note">sonraki yıl tahmini</span>' : ''}
+      <div class="dl-body">
+        <div class="dl-top">
+          <span class="dl-badge">${dl.type}</span>
+          ${dl.isNextYear ? '<span class="dl-next">sonraki yıl tahmini</span>' : ''}
         </div>
-        <div class="card-label">${dl.label}</div>
-        ${dl.sub ? '<div class="card-sub">'+dl.sub+'</div>' : ''}
+        <div class="dl-label">${dl.label}</div>
+        ${dl.sub ? '<div class="dl-sub">'+dl.sub+'</div>' : ''}
       </div>
-      <div class="card-right">
+      <div class="dl-right">
         ${daysLabel(s) ? '<span class="pill '+pillCls(s.type)+'">'+daysLabel(s)+'</span>' : ''}
-        <div class="card-date ${cc}">${fmt(dl.date)}</div>
+        <div class="dl-date ${cc}">${fmt(dl.date)}</div>
       </div>
     </div>`;
   });
   if (done.length > 0) {
-    html += `<div style="margin-top:10px;">
-      <button class="done-toggle" onclick="toggleDone('${num}')">
-        ${showDone ? '▲' : '▼'} Tamamlananlar (${done.length})
-      </button>
-      <div id="done_${num}" style="display:${showDone?'flex':'none'};flex-direction:column;gap:6px;">`;
+    html += `<button class="done-toggle" onclick="toggleDone('${num}')">${showDone?'▲':'▼'} Tamamlananlar (${done.length})</button>
+    <div style="display:${showDone?'flex':'none'};flex-direction:column;gap:6px;">`;
     done.forEach(dl => {
       html += `<div class="dl-card done">
         <input type="checkbox" checked onchange="markDone('${num}','${dl.id}',this.checked)" />
-        <div class="card-body">
-          <div class="card-top"><span class="badge">${dl.type}</span></div>
-          <div class="card-label" style="text-decoration:line-through;color:var(--text3);">${dl.label}</div>
-          ${dl.sub ? '<div class="card-sub">'+dl.sub+'</div>' : ''}
+        <div class="dl-body">
+          <div class="dl-top"><span class="dl-badge">${dl.type}</span></div>
+          <div class="dl-label" style="text-decoration:line-through;color:var(--text3)">${dl.label}</div>
         </div>
-        <div class="card-right">
+        <div class="dl-right">
           <span class="pill done-lbl">Tamamlandı</span>
-          <div class="card-date done-d">${fmt(dl.date)}</div>
+          <div class="dl-date done-d">${fmt(dl.date)}</div>
         </div>
       </div>`;
     });
-    html += '</div></div>';
+    html += '</div>';
   }
   return html;
 }
@@ -291,101 +408,186 @@ function markDone(num, id, checked) {
   const key = num+'_'+id;
   if (checked) doneItems[key] = true; else delete doneItems[key];
   persist();
-  rerender(num);
+  // popup'u yenile
+  const c = saved[num];
+  if (c && c.profile) {
+    const dl = buildDeadlines(c.profile);
+    const all = buildAll(dl);
+    const dot = dotStatus(all.filter(d => !doneItems[num+'_'+d.id]));
+    saved[num].dot = dot;
+    persist();
+  }
+  openPopup(num);
+  renderGrid();
 }
 
 function toggleDone(num) {
   showDoneMap[num] = !showDoneMap[num];
-  rerender(num);
+  openPopup(num);
 }
 
-function rerender(num) {
-  if (!currentProfile || currentNum !== num) return;
-  const p = currentProfile;
-  const dl = buildDeadlines(p);
-  const all = buildAll(dl);
-  const overdue = all.filter(d => d.status.type==='overdue' && !doneItems[num+'_'+d.id]);
-  const statusLabel = p.company_status==='active' ? '<span class="status-active">Aktif</span>' : '<span class="status-dissolved">'+(p.company_status||'—')+'</span>';
-  let html = `<div class="company-header">
-    <div class="company-name">${p.company_name}</div>
-    <div class="company-meta">
-      <span>No: <strong>${p.company_number}</strong></span>
-      <span>Durum: ${statusLabel}</span>
-      <span>Tür: ${p.type||'—'}</span>
-      ${p.date_of_creation ? '<span>Kuruluş: '+fmt(p.date_of_creation)+'</span>' : ''}
-    </div>
-  </div>`;
-  if (overdue.length > 0) html += `<div class="overdue-banner">⚠ ${overdue.length} vadesi geçmiş yükümlülük var!</div>`;
-  html += '<p class="section-label">Yükümlülükler & Son Tarihler</p><div class="deadlines-list">';
-  html += renderCards(all, num, showDoneMap[num] || false);
-  html += '</div>';
-  document.getElementById('output').innerHTML = html;
-  const dot = dotStatus(all.filter(d => !doneItems[num+'_'+d.id]));
-  if (saved[num]) { saved[num].dot = dot; persist(); renderPinned(); }
-}
-
+// ---- SEARCH ----
 async function searchCompany() {
   if (!apiKey) { alert('Önce API key girin!'); return; }
   const raw = document.getElementById('regInput').value.trim();
   if (!raw) return;
   const num = raw.replace(/[^A-Za-z0-9]/g,'').toUpperCase().padStart(8,'0');
   document.getElementById('searchBtn').disabled = true;
-  document.getElementById('output').innerHTML = '<div class="loading"><div class="spinner"></div>Sorgulanıyor...</div>';
+  document.getElementById('searchStatus').innerHTML = '<div class="loading"><div class="spinner"></div>Sorgulanıyor...</div>';
   try {
     const r = await fetch(API_BASE + '/company/' + num + '?apikey=' + encodeURIComponent(apiKey));
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const profile = await r.json();
-    currentProfile = profile;
-    currentNum = num;
     const dl = buildDeadlines(profile);
     const all = buildAll(dl);
-    saved[num] = { name: profile.company_name, dot: dotStatus(all) };
+    const nextDue = dl.map(d => d.date).filter(Boolean).sort()[0] || '9999-99-99';
+    const dot = dotStatus(all);
+    saved[num] = { name: profile.company_name, dot, nextDue, profile, deadlines: dl };
     persist();
-    renderPinned();
-    rerender(num);
+    document.getElementById('searchStatus').innerHTML = '';
+    document.getElementById('regInput').value = '';
+    renderGrid();
   } catch(e) {
-    let msg = 'Bağlantı hatası: ' + e.message;
-    if (e.message.includes('fetch')) msg = '❌ Sunucu çalışmıyor! Lütfen PROGRAMI_BASLAT.bat dosyasını çalıştırın.';
-    document.getElementById('output').innerHTML = '<div class="error-msg">'+msg+'</div>';
+    let msg = 'Hata: ' + e.message;
+    if (e.message.includes('404')) msg = 'Şirket bulunamadı.';
+    document.getElementById('searchStatus').innerHTML = '<div class="error-msg">'+msg+'</div>';
   }
   document.getElementById('searchBtn').disabled = false;
-}
-
-function loadSaved(num) {
-  document.getElementById('regInput').value = num;
-  searchCompany();
 }
 
 function removeSaved(num) {
   delete saved[num];
   persist();
-  renderPinned();
-  if (currentNum === num) document.getElementById('output').innerHTML = '';
+  renderGrid();
+  renderCalendar();
 }
 
-function renderPinned() {
-  const keys = Object.keys(saved);
-  const sec = document.getElementById('savedSection');
-  const list = document.getElementById('pinnedList');
-  if (!keys.length) { sec.style.display='none'; return; }
-  sec.style.display='block';
-  list.innerHTML = keys.map(num => {
+// ---- CALENDAR ----
+function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+function calToday() { calYear=today.getFullYear(); calMonth=today.getMonth(); renderCalendar(); }
+
+function allEvents() {
+  const events = [];
+  Object.keys(saved).forEach(num => {
     const c = saved[num];
-    return `<div class="pinned-item" onclick="loadSaved('${num}')">
-      <div><div class="pinned-name">${c.name}</div><div class="pinned-num">${num}</div></div>
-      <div class="pinned-right">
-        <div class="dot ${c.dot||'ok'}"></div>
-        <button class="rm-btn" onclick="event.stopPropagation();removeSaved('${num}')" title="Kaldır">✕</button>
-      </div>
+    const dl = c.deadlines || [];
+    dl.forEach(d => {
+      if (!d.date) return;
+      events.push({ num, name: c.name, type: d.type, date: d.date, status: d.status });
+    });
+  });
+  return events;
+}
+
+function renderCalendar() {
+  const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  document.getElementById('calMonthLabel').textContent = months[calMonth] + ' ' + calYear;
+
+  const events = allEvents();
+  const eventsByDate = {};
+  events.forEach(e => {
+    const k = e.date;
+    if (!eventsByDate[k]) eventsByDate[k] = [];
+    eventsByDate[k].push(e);
+  });
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const startOffset = (firstDay + 6) % 7; // Mon start
+
+  let html = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+  for (let i = 0; i < startOffset; i++) {
+    const prevDay = new Date(calYear, calMonth, -startOffset+i+1).getDate();
+    html += `<div class="cal-day other-month">${prevDay}</div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const evs = eventsByDate[dateStr] || [];
+    const dotCls = evs.length ? (evs.some(e=>e.status.type==='overdue'||e.status.type==='danger')?'danger':evs.some(e=>e.status.type==='warning')?'warning':'ok') : '';
+    html += `<div class="cal-day${isToday?' today':''}${evs.length?' has-event':''}" ${evs.length?'onclick="showCalDay(\''+dateStr+'\')"':''} title="${evs.map(e=>e.name).join(', ')}">
+      ${d}
+      ${dotCls ? '<div class="event-dot '+dotCls+'"></div>' : ''}
+    </div>`;
+  }
+
+  const remaining = (7 - (startOffset + daysInMonth) % 7) % 7;
+  for (let i = 1; i <= remaining; i++) html += `<div class="cal-day other-month">${i}</div>`;
+
+  document.getElementById('calGrid').innerHTML = html;
+
+  // Bu ay içindeki etkinlikler
+  const monthStart = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-01';
+  const monthEnd = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(daysInMonth).padStart(2,'0');
+  const monthEvents = events.filter(e => e.date >= monthStart && e.date <= monthEnd)
+    .sort((a,b) => a.date.localeCompare(b.date));
+
+  if (!monthEvents.length) {
+    document.getElementById('calMonthEvents').innerHTML = '<div style="font-size:12px;color:var(--text3);">Bu ay son tarihi yok.</div>';
+    return;
+  }
+
+  document.getElementById('calMonthEvents').innerHTML = monthEvents.map(e => {
+    const sc = (e.status.type==='overdue'||e.status.type==='danger')?'danger':e.status.type==='warning'?'warning':'ok';
+    return `<div class="cal-event-item ${sc}" onclick="openPopup('${e.num}')">
+      <div class="cal-event-name">${e.name}</div>
+      <div class="cal-event-type">${e.type}</div>
+      <div class="cal-event-date" style="color:var(--${sc==='danger'?'red':sc==='warning'?'amber':'green'})">${fmt(e.date)}</div>
     </div>`;
   }).join('');
 }
 
+function showCalDay(dateStr) {
+  const events = allEvents().filter(e => e.date === dateStr);
+  if (!events.length) return;
+  // Birden fazlaysa ilkini aç, ya da hepsini popup'ta göster
+  if (events.length === 1) { openPopup(events[0].num); return; }
+  let html = `<div class="popup-co-name">${fmt(dateStr)} — Son Tarihler</div><div style="margin-top:1rem;display:flex;flex-direction:column;gap:8px;">`;
+  events.forEach(e => {
+    const sc = (e.status.type==='overdue'||e.status.type==='danger')?'danger':e.status.type==='warning'?'warning':'ok';
+    html += `<div class="cal-event-item ${sc}" onclick="closePopupDirect();openPopup('${e.num}')">
+      <div class="cal-event-name">${e.name}</div>
+      <div class="cal-event-type">${e.type}</div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('popupContent').innerHTML = html;
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
 document.getElementById('regInput').addEventListener('keydown', e => { if(e.key==='Enter') searchCompany(); });
 document.getElementById('regInput').addEventListener('input', e => { e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closePopupDirect(); });
+
+// Eski kayıtlarda profile yoksa yeniden yükle
+async function refreshMissingProfiles() {
+  const keys = Object.keys(saved);
+  for (const num of keys) {
+    if (!saved[num].profile && apiKey) {
+      try {
+        const r = await fetch(API_BASE + '/company/' + num + '?apikey=' + encodeURIComponent(apiKey));
+        if (r.ok) {
+          const profile = await r.json();
+          const dl = buildDeadlines(profile);
+          const all = buildAll(dl);
+          const nextDue = dl.map(d => d.date).filter(Boolean).sort()[0] || '9999-99-99';
+          saved[num] = { ...saved[num], profile, deadlines: dl, nextDue, dot: dotStatus(all) };
+        }
+      } catch(e) {}
+    }
+  }
+  persist();
+  renderGrid();
+}
 
 renderApiStatus();
-renderPinned();
+renderGrid();
+renderCalendar();
+if (apiKey) refreshMissingProfiles();
 </script>
 </body>
 </html>
