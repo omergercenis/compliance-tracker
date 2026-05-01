@@ -310,8 +310,8 @@ const CLIENTS_DATA = [{"ref": "1", "name": "Simla Collection Ltd", "director": "
 const API_BASE = "/api";
 
 let apiKey = localStorage.getItem('ch_api_key') || '';
-let trackerData = JSON.parse(localStorage.getItem('ch_tracker') || '{}');
-let doneItems = JSON.parse(localStorage.getItem('ch_done') || '{}');
+let trackerData = {};
+let doneItems = {};
 let showDone = {};
 let calY, calM;
 let searchQ = '';
@@ -320,7 +320,52 @@ let currentPopupNum = null;
 const today = new Date(); today.setHours(0,0,0,0);
 calY = today.getFullYear(); calM = today.getMonth();
 
+// ── DB API ──
+async function dbSaveTracker(num, data) {
+  // profile objesi çok büyük olabilir, sadece gerekli kısımları sakla
+  const slim = { name: data.name, dl: data.dl, nextDue: data.nextDue,
+    profile: data.profile ? {
+      company_name: data.profile.company_name,
+      company_number: data.profile.company_number,
+      company_status: data.profile.company_status,
+      type: data.profile.type,
+      date_of_creation: data.profile.date_of_creation,
+      confirmation_statement: data.profile.confirmation_statement,
+      accounts: data.profile.accounts,
+    } : null
+  };
+  await fetch('/db/tracker', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({company_num:num, data:slim})});
+}
+
+async function dbDeleteTracker(num) {
+  await fetch('/db/tracker/'+num, {method:'DELETE'});
+}
+
+async function dbSaveDone(key, checked) {
+  await fetch('/db/done', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key, checked})});
+}
+
+async function loadFromDB() {
+  try {
+    const [tr, dn] = await Promise.all([
+      fetch('/db/tracker').then(r=>r.json()),
+      fetch('/db/done').then(r=>r.json())
+    ]);
+    trackerData = tr || {};
+    doneItems = dn || {};
+    // dl status'ları yeniden hesapla (tarihler değişmiş olabilir)
+    Object.values(trackerData).forEach(c => {
+      if (c.dl) c.dl = c.dl.map(d => ({...d, status: getStatus(d.date)}));
+    });
+  } catch(e) {
+    console.log('DB load error, using localStorage fallback', e);
+    trackerData = JSON.parse(localStorage.getItem('ch_tracker') || '{}');
+    doneItems = JSON.parse(localStorage.getItem('ch_done') || '{}');
+  }
+}
+
 function persist() {
+  // localStorage fallback olarak tut
   localStorage.setItem('ch_tracker', JSON.stringify(trackerData));
   localStorage.setItem('ch_done', JSON.stringify(doneItems));
 }
@@ -549,6 +594,7 @@ async function addCompany() {
     const nextDue = dl.map(d=>d.date).filter(Boolean).sort()[0]||'9999';
     trackerData[num]={name:profile.company_name,profile,dl,nextDue};
     persist();
+    await dbSaveTracker(num, trackerData[num]);
     document.getElementById('addStatus').innerHTML='';
     document.getElementById('regInput').value='';
     renderTracker();renderCal();
@@ -688,6 +734,7 @@ function markDone(num,id,checked) {
   const key=num+'_'+id;
   if(checked) doneItems[key]=true; else delete doneItems[key];
   persist();
+  dbSaveDone(key, checked);
   if(trackerData[num]) {
     const all=buildAll(trackerData[num].dl);
     trackerData[num].dotColor=dotColor(all.filter(d=>!doneItems[num+'_'+d.id]));
@@ -791,18 +838,18 @@ function calDayClick(ds){
 // INIT — eski tracker datasını migrate et
 // ─────────────────────────────────────────────
 function migrateOldData(){
-  // Eski format: ch_saved
   const old = JSON.parse(localStorage.getItem('ch_saved')||'{}');
-  let migrated=0;
-  Object.entries(old).forEach(([num,c])=>{
+  const oldTracker = JSON.parse(localStorage.getItem('ch_tracker')||'{}');
+  const combined = {...old, ...oldTracker};
+  Object.entries(combined).forEach(([num,c])=>{
     if(!trackerData[num]&&c.profile){
       const dl=buildDL(c.profile);
       const nextDue=dl.map(d=>d.date).filter(Boolean).sort()[0]||'9999';
-      trackerData[num]={name:c.name,profile:c.profile,dl,nextDue};
-      migrated++;
+      trackerData[num]={name:c.name||c.profile.company_name,profile:c.profile,dl,nextDue};
+      dbSaveTracker(num, trackerData[num]);
     }
   });
-  if(migrated){persist();console.log('Migrated',migrated,'companies');}
+  persist();
 }
 
 function toggleTheme(){
@@ -826,10 +873,18 @@ function initTheme(){
 }
 
 renderApiStatus();
-migrateOldData();
 initTheme();
-renderClients();
-updateStats();
+
+// Sayfa yüklenince DB'den verileri çek, sonra render et
+async function init() {
+  document.getElementById('clientsGrid').innerHTML = '<div class="empty" style="grid-column:1/-1">Yükleniyor...</div>';
+  await loadFromDB();
+  migrateOldData();
+  renderClients();
+  updateStats();
+  renderCal();
+}
+init();
 </script>
 </body>
 </html>
