@@ -453,12 +453,12 @@ function renderClients() {
     const dl = td?.dl || [];
     const cs = dl.find(d=>d.id==='cs');
     const acc = dl.find(d=>d.id==='acc');
-    const color = getColor(c.name);
     const badgeMap = {red:'badge-red',amber:'badge-amber',green:'badge-green',grey:'badge-grey'};
     const badgeText = {red:'⚠ Acil',amber:'Yaklaşıyor',green:'Tamam',grey:'Bilinmiyor'};
+    const dotClr = {red:'var(--red)',amber:'var(--amber)',green:'var(--green)',grey:'var(--text3)'};
     return `<div class="client-card c-${dc}" onclick="openClientPopup('${c.companyNo}')">
       <div class="card-top">
-        <div class="card-avatar" style="background:${color}">${initials(c.name)}</div>
+        <div style="width:12px;height:12px;border-radius:50%;background:${dotClr[dc]||dotClr.grey};flex-shrink:0;margin-top:3px;box-shadow:0 0 6px ${dotClr[dc]||dotClr.grey}"></div>
         <span class="card-status-badge ${badgeMap[dc]}">${badgeText[dc]}</span>
       </div>
       <div class="card-name">${c.name}</div>
