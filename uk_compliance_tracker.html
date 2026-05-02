@@ -930,14 +930,7 @@ async function startApp() {
 renderApiStatus();
 initTheme();
 checkAuth();
-  document.getElementById('clientsGrid').innerHTML = '<div class="empty" style="grid-column:1/-1">Yükleniyor...</div>';
-  await loadFromDB();
-  migrateOldData();
-  renderClients();
-  updateStats();
-  renderCal();
-}
-init();
+
 </script>
 </body>
 </html>
