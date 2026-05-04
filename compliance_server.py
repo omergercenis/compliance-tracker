@@ -7,12 +7,13 @@ import os
 import base64
 import sqlite3
 import threading
+import time
 
 PORT = int(os.environ.get("PORT", 8765))
 CH_API_KEY = os.environ.get("CH_API_KEY", "")
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+CRON_SECRET = os.environ.get("CRON_SECRET", "tradist-cron-2024")
 
-# DB setup
 db_lock = threading.Lock()
 
 def get_db():
@@ -30,19 +31,10 @@ def init_db():
     conn, dbtype = get_db()
     cur = conn.cursor()
     if dbtype == 'pg':
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS tracker (
-                company_num TEXT PRIMARY KEY,
-                data JSONB NOT NULL,
-                updated_at TIMESTAMP DEFAULT NOW()
-            )
-        """)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS done_items (
-                key TEXT PRIMARY KEY,
-                updated_at TIMESTAMP DEFAULT NOW()
-            )
-        """)
+        cur.execute("""CREATE TABLE IF NOT EXISTS tracker (
+            company_num TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMP DEFAULT NOW())""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS done_items (
+            key TEXT PRIMARY KEY, updated_at TIMESTAMP DEFAULT NOW())""")
     else:
         cur.execute("CREATE TABLE IF NOT EXISTS tracker (company_num TEXT PRIMARY KEY, data TEXT NOT NULL)")
         cur.execute("CREATE TABLE IF NOT EXISTS done_items (key TEXT PRIMARY KEY)")
@@ -111,6 +103,63 @@ def db_set_done(key, checked):
         conn.commit()
         conn.close()
 
+def fetch_company(num, api_key):
+    url = f"https://api.company-information.service.gov.uk/company/{num}"
+    auth = base64.b64encode((api_key + ":").encode()).decode()
+    req = urllib.request.Request(url, headers={"Authorization": "Basic " + auth, "Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read())
+
+def refresh_all_companies():
+    """Tüm şirketlerin Companies House bilgilerini güncelle"""
+    api_key = CH_API_KEY
+    if not api_key:
+        print("No API key, skipping refresh", flush=True)
+        return {"updated": 0, "errors": 0, "message": "No API key"}
+
+    tracker = db_get_tracker()
+    updated = 0
+    errors = 0
+
+    print(f"Starting refresh for {len(tracker)} companies...", flush=True)
+
+    for num, data in tracker.items():
+        try:
+            profile = fetch_company(num, api_key)
+            # Sadece Companies House verilerini güncelle, kullanıcı verilerini koru
+            data['profile'] = {
+                'company_name': profile.get('company_name'),
+                'company_number': profile.get('company_number'),
+                'company_status': profile.get('company_status'),
+                'type': profile.get('type'),
+                'date_of_creation': profile.get('date_of_creation'),
+                'confirmation_statement': profile.get('confirmation_statement'),
+                'accounts': profile.get('accounts'),
+            }
+            data['name'] = profile.get('company_name', data.get('name', ''))
+            # nextDue güncelle
+            cs = profile.get('confirmation_statement', {}) or {}
+            acc = profile.get('accounts', {}) or {}
+            dates = [d for d in [cs.get('next_due'), acc.get('next_due')] if d]
+            data['nextDue'] = sorted(dates)[0] if dates else '9999'
+            # dl güncelle
+            data['dl'] = [
+                {'id': 'cs', 'type': 'Confirmation Statement', 'label': 'Son beyan tarihi',
+                 'date': cs.get('next_due'), 'sub': f"Son CS: {cs.get('last_made_up_to','')}" if cs.get('last_made_up_to') else None},
+                {'id': 'acc', 'type': 'Accounts', 'label': 'Hesap beyanı son tarihi',
+                 'date': acc.get('next_due'), 'sub': f"Dönem sonu: {(acc.get('next_accounts') or {}).get('period_end_on','')}" if (acc.get('next_accounts') or {}).get('period_end_on') else None},
+            ]
+            db_set_tracker(num, data)
+            updated += 1
+            print(f"  ✓ {num} {data['name']}", flush=True)
+            time.sleep(0.3)  # API rate limit için bekle
+        except Exception as e:
+            errors += 1
+            print(f"  ✗ {num}: {e}", flush=True)
+
+    print(f"Refresh complete: {updated} updated, {errors} errors", flush=True)
+    return {"updated": updated, "errors": errors, "total": len(tracker)}
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args): pass
 
@@ -135,7 +184,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         params = urllib.parse.parse_qs(parsed.query)
         path = parsed.path
 
-        # HTML
         if path in ("/", "/index.html"):
             html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uk_compliance_tracker.html")
             try:
@@ -150,17 +198,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.send_error(404)
             return
 
-        # DB: get tracker data
         if path == "/db/tracker":
             self.send_json(db_get_tracker())
             return
 
-        # DB: get done items
         if path == "/db/done":
             self.send_json(db_get_done())
             return
 
-        # Companies House proxy
+        # Otomatik güncelleme endpoint — Cron Job buraya istek atar
+        if path == "/cron/refresh":
+            secret = params.get("secret", [""])[0]
+            if secret != CRON_SECRET:
+                self.send_json({"error": "unauthorized"}, 401)
+                return
+            # Arka planda çalıştır
+            def run():
+                refresh_all_companies()
+            threading.Thread(target=run, daemon=True).start()
+            self.send_json({"message": "Refresh started", "companies": len(db_get_tracker())})
+            return
+
         if path.startswith("/api/"):
             ch_path = path[4:]
             api_key = params.get("apikey", [""])[0] or CH_API_KEY
@@ -199,7 +257,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         except:
             payload = {}
 
-        # Save tracker entry
         if parsed.path == "/db/tracker":
             num = payload.get("company_num")
             data = payload.get("data")
@@ -210,7 +267,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.send_json({"error": "missing fields"}, 400)
             return
 
-        # Save done item
         if parsed.path == "/db/done":
             key = payload.get("key")
             checked = payload.get("checked", True)
@@ -233,14 +289,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_error(404)
 
 if __name__ == "__main__":
-    # Install psycopg2 if needed
     if DATABASE_URL:
         try:
             import psycopg2
         except ImportError:
             import subprocess, sys
             subprocess.check_call([sys.executable, "-m", "pip", "install", "psycopg2-binary", "-q"])
-    
+
     init_db()
     server = http.server.HTTPServer(("0.0.0.0", PORT), Handler)
     print(f"Server running on port {PORT}", flush=True)
