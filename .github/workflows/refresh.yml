@@ -1,0 +1,14 @@
+name: Daily Compliance Refresh
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger refresh
+        run: |
+          curl -s "https://compliance-tracker-aaqk.onrender.com/cron/refresh?secret=tradist-cron-2024"
